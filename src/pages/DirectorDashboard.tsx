@@ -28,6 +28,8 @@ const fetchAction = async (action: string) => {
 const DirectorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [debugDocs, setDebugDocs] = useState<any[] | null>(null);
+  const [showDebug, setShowDebug] = useState(true);
   const [stats, setStats] = useState([
     { label: "Всего документов", value: 0 },
     { label: "Утверждено", value: 0 },
@@ -47,6 +49,21 @@ const DirectorDashboard = () => {
           fetchAction("get-directions"),
           fetchAction("get-sources"),
         ]);
+
+        // Debug: save first 3 docs
+        if (Array.isArray(docs)) {
+          setDebugDocs(docs.slice(0, 3).map((d: any) => ({
+            title: d.title,
+            status: d.status,
+            roles: d.roles,
+            directions: d.directions,
+            projects: d.projects,
+            source: d.source,
+            fileUrl: d.fileUrl,
+            tags: d.tags,
+            date: d.date,
+          })));
+        }
 
         // Stats
         if (Array.isArray(docs)) {
@@ -137,6 +154,20 @@ const DirectorDashboard = () => {
           ))
         )}
       </div>
+
+      {debugDocs && showDebug && (
+        <div className="mx-4 mt-4">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs text-muted-foreground">DEBUG: первые 3 документа (raw)</span>
+            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={() => setShowDebug(false)}>
+              Скрыть отладку
+            </Button>
+          </div>
+          <pre className="text-xs bg-gray-100 rounded p-3 overflow-x-auto max-h-60">
+            {JSON.stringify(debugDocs, null, 2)}
+          </pre>
+        </div>
+      )}
 
       <div className="mx-4 mt-6 space-y-4">
         {filterGroups.map((group) => (
