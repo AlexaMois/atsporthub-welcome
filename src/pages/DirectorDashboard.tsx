@@ -139,7 +139,21 @@ const DirectorDashboard = () => {
     ];
   }, [docs]);
 
-  // filterOptions now loaded from API in useEffect
+  const chipCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    docs.forEach(doc => {
+      ['roles', 'projects', 'directions', 'source'].forEach(field => {
+        const arr = doc[field];
+        if (Array.isArray(arr)) {
+          arr.forEach((o: any) => {
+            const key = `${field}:${o.recordId}`;
+            counts[key] = (counts[key] || 0) + 1;
+          });
+        }
+      });
+    });
+    return counts;
+  }, [docs]);
 
   const filteredDocs = useMemo(() => {
     return docs.filter((doc) => {
@@ -228,7 +242,7 @@ const DirectorDashboard = () => {
                             active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border"
                           }`}
                         >
-                          {item.name}
+                          {item.name} ({chipCounts[`${g.key}:${item.id}`] || 0})
                         </button>
                       );
                     })}
