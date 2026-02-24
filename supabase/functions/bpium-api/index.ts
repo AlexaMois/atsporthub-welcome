@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     const action = url.searchParams.get('action');
 
     if (action === 'get-documents') {
-      const res = await fetch(`${BASE_URL}/api/catalogs/56/records`, {
+      const res = await fetch(`${BASE_URL}/api/v1/catalogs/56/records`, {
         headers: authHeaders,
       });
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'get-roles') {
-      const res = await fetch(`${BASE_URL}/api/catalogs/57/records`, {
+      const res = await fetch(`${BASE_URL}/api/v1/catalogs/57/records`, {
         headers: authHeaders,
       });
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
