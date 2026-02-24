@@ -1,44 +1,45 @@
 
 
-# Полноценный дашборд Генерального директора
+# Edge Function bpium-api и интеграция с дашбордом
 
-## Файл: `src/pages/DirectorDashboard.tsx`
+## 1. Новый файл: `supabase/functions/bpium-api/index.ts`
 
-Полная переработка страницы — замена заглушки на дашборд с шапкой, счётчиками, фильтрами, поиском и кнопкой.
+Edge function с двумя действиями, проксирующая запросы к Bpium API.
 
-### Структура страницы
+- CORS-заголовки на все ответы (включая OPTIONS preflight)
+- Basic Auth через секреты `BPIUM_LOGIN` и `BPIUM_PASSWORD`
+- Параметр `?action=` определяет действие:
 
-**1. Шапка** (h-14, bg `#0099ff`, flex justify-between items-center px-4)
-- Слева: кнопка «← Выйти» (`variant="ghost"`, белый текст, `navigate('/')`)
-- Центр: «АТС Портал» (font-semibold, белый)
-- Справа: «Генеральный директор» (text-sm, opacity-80, белый)
+**action=get-documents**
+- GET `https://neiroresheniya.bpium.ru/api/catalogs/56/records`
+- Маппинг полей: id, title (values['2']), responsible (values['3']), date (values['4']), source (values['5']), directions (values['6']), roles (values['7']), projects (values['8']), status (values['12']), version (values['13'])
 
-**2. Счётчики** (grid-cols-2 / grid-cols-4, gap-4, mt-6 mx-4)
-- 4 карточки со статичными данными:
-  - Всего документов: 34
-  - Утверждено: 34
-  - На согласовании: 0
-  - Новых за месяц: 5
-- Стиль карточки: bg-white, rounded-xl, shadow-sm, p-6, значение text-3xl font-bold text-[#0099ff], подпись text-sm text-gray-500
+**action=get-roles**
+- GET `https://neiroresheniya.bpium.ru/api/catalogs/57/records`
+- Маппинг: id, name (values['1'])
 
-**3. Фильтры** (mx-4 mt-6) — три группы чипсов с заголовками
-- Заголовок группы: text-xs text-gray-400 uppercase mb-2
-- **Проекты**: ГПНЗ, ВЧНГ, СН, ДНГКМ, АУП
-- **Роли**: Водитель, Механик РММ, Диспетчер
-- **Направления**: БДД, ОТ, ПБ, ГСМ
-- Активный чип: bg `#0099ff`, text-white, rounded-full
-- Неактивный чип: bg-white, border, text-gray-700, rounded-full
-- Клик — toggle через `useState` (Set для каждой группы)
+## 2. Конфигурация: `supabase/config.toml`
 
-**4. Поиск** (mx-4 mt-4)
-- Компонент `Input`, placeholder «Поиск по всей базе...», w-full, rounded-lg
+Добавить секцию:
+```text
+[functions.bpium-api]
+verify_jwt = false
+```
 
-**5. Кнопка** (mx-4 mt-4)
-- «Посмотреть глазами сотрудника»
-- variant outline, border-[#0099ff], text-[#0099ff]
+## 3. Изменения: `src/pages/DirectorDashboard.tsx`
 
-### Технические детали
-- Импорты: `useState` из React, `useNavigate` из react-router-dom, `ArrowLeft` из lucide-react, `Button` и `Input` из UI-компонентов
-- Три независимых `useState<Set<string>>` для toggle-фильтров (проекты, роли, направления)
-- Все данные статичные — массивы и объекты прямо в компоненте
+- Импорт `useEffect` и `supabase` клиента
+- Добавить состояния: `loading` (boolean), `stats` (динамические счётчики)
+- При монтировании (`useEffect`) вызвать `supabase.functions.invoke('bpium-api', { body: { action: 'get-documents' } })` (через query param в URL или body)
+- Рассчитать:
+  - «Всего документов» = data.length
+  - «Утверждено» = фильтр по status включающему '3'
+  - «На согласовании» и «Новых за месяц» = 0 и 5 (fallback, пока нет логики)
+- При ошибке — fallback значения: 34, 34, 0, 5
+- Спиннер (компонент Skeleton или Loader2 из lucide) пока loading === true
 
+## Технические детали
+
+- Секреты `BPIUM_LOGIN` и `BPIUM_PASSWORD` уже настроены в проекте
+- Edge function вызывается через `supabase.functions.invoke()` — не по прямому URL
+- `verify_jwt = false` — функция публичная, авторизация к Bpium через Basic Auth на стороне сервера
