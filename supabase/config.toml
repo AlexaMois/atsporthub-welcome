@@ -1,1 +1,4 @@
 project_id = "piivkjefugxyagwxriok"
+
+[functions.bpium-api]
+verify_jwt = false
