@@ -1,118 +1,109 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+
+interface LinkedObj {
+  catalogId: string;
+  recordId: string;
+  recordTitle: string;
+}
 
 interface FilterItem {
   id: string;
   name: string;
 }
 
-interface FilterGroup {
-  title: string;
-  items: FilterItem[];
-}
-
 const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const fetchAction = async (action: string) => {
-  const res = await fetch(`${FUNC_URL}?action=${action}`, {
-    headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
-  return res.json();
+const getStatusId = (doc: any): number => {
+  if (Array.isArray(doc.status)) return parseInt(doc.status[0]) || 0;
+  return Number(doc.status) || 0;
 };
+
+const STATUS_MAP: Record<number, { label: string; className: string }> = {
+  1: { label: "Черновик", className: "bg-gray-200 text-gray-700" },
+  2: { label: "На проверке", className: "bg-yellow-100 text-yellow-800" },
+  3: { label: "Утверждён", className: "bg-green-100 text-green-800" },
+  4: { label: "Отклонён", className: "bg-red-100 text-red-800" },
+};
+
+const formatDate = (d: any): string => {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return "";
+  return `${String(dt.getDate()).padStart(2, "0")}.${String(dt.getMonth() + 1).padStart(2, "0")}.${dt.getFullYear()}`;
+};
+
+const extractLinkedNames = (field: any): string => {
+  if (!Array.isArray(field)) return "";
+  return field.map((o: LinkedObj) => o.recordTitle).filter(Boolean).join(", ");
+};
+
+const extractFileUrl = (doc: any): string | null => {
+  if (doc.fileUrl) {
+    if (Array.isArray(doc.fileUrl) && doc.fileUrl[0]?.url) return doc.fileUrl[0].url;
+    if (typeof doc.fileUrl === "string") return doc.fileUrl;
+  }
+  if (Array.isArray(doc.responsible) && doc.responsible[0]?.url) {
+    return doc.responsible[0].url;
+  }
+  return null;
+};
+
+const extractUnique = (docs: any[], field: string): FilterItem[] => {
+  const map = new Map<string, string>();
+  docs.forEach((doc) => {
+    const arr = doc[field];
+    if (!Array.isArray(arr)) return;
+    arr.forEach((o: LinkedObj) => {
+      if (o.recordId && o.recordTitle && !map.has(o.recordId)) {
+        map.set(o.recordId, o.recordTitle);
+      }
+    });
+  });
+  return Array.from(map, ([id, name]) => ({ id, name }));
+};
+
+const FILTER_GROUPS = [
+  { key: "projects", title: "Проекты" },
+  { key: "roles", title: "Роли" },
+  { key: "directions", title: "Направления" },
+  { key: "source", title: "Источники" },
+] as const;
 
 const DirectorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [debugDocs, setDebugDocs] = useState<any[] | null>(null);
-  const [showDebug, setShowDebug] = useState(true);
-  const [stats, setStats] = useState([
-    { label: "Всего документов", value: 0 },
-    { label: "Утверждено", value: 0 },
-    { label: "На согласовании", value: 0 },
-    { label: "Новых за месяц", value: 0 },
-  ]);
-  const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([]);
-  const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({});
+  const [docs, setDocs] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({
+    projects: new Set(),
+    roles: new Set(),
+    directions: new Set(),
+    source: new Set(),
+  });
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [docs, roles, projects, directions, sources] = await Promise.all([
-          fetchAction("get-documents"),
-          fetchAction("get-roles"),
-          fetchAction("get-projects"),
-          fetchAction("get-directions"),
-          fetchAction("get-sources"),
-        ]);
-
-        // Debug: save first 3 docs
-        if (Array.isArray(docs)) {
-          setDebugDocs(docs.slice(0, 3).map((d: any) => ({
-            title: d.title,
-            status: d.status,
-            roles: d.roles,
-            directions: d.directions,
-            projects: d.projects,
-            source: d.source,
-            fileUrl: d.fileUrl,
-            tags: d.tags,
-            date: d.date,
-          })));
-        }
-
-        // Stats
-        if (Array.isArray(docs)) {
-          const total = docs.length;
-          const approved = docs.filter((d: any) =>
-            Array.isArray(d.status) ? d.status.includes("3") : d.status === "3"
-          ).length;
-          const inReview = docs.filter((d: any) =>
-            Array.isArray(d.status) ? d.status.includes("2") : d.status === "2"
-          ).length;
-
-          const now = new Date();
-          const newThisMonth = docs.filter((d: any) => {
-            if (!d.date) return false;
-            const dt = new Date(d.date);
-            return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
-          }).length;
-
-          setStats([
-            { label: "Всего документов", value: total },
-            { label: "Утверждено", value: approved },
-            { label: "На согласовании", value: inReview },
-            { label: "Новых за месяц", value: newThisMonth },
-          ]);
-        }
-
-        // Filter groups
-        const groups: FilterGroup[] = [];
-        const initial: Record<string, Set<string>> = {};
-
-        const addGroup = (title: string, data: any[]) => {
-          if (Array.isArray(data) && data.length > 0) {
-            groups.push({
-              title,
-              items: data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })),
-            });
-            initial[title] = new Set();
-          }
-        };
-
-        addGroup("Проекты", projects);
-        addGroup("Роли", roles);
-        addGroup("Направления", directions);
-        addGroup("Источники", sources);
-
-        setFilterGroups(groups);
-        setActiveFilters(initial);
+        const res = await fetch(`${FUNC_URL}?action=get-documents`, {
+          headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+        });
+        if (!res.ok) throw new Error(`get-documents failed: ${res.status}`);
+        const data = await res.json();
+        if (Array.isArray(data)) setDocs(data);
       } catch (e) {
-        console.error("Failed to load data:", e);
+        console.error("Failed to load documents:", e);
       } finally {
         setLoading(false);
       }
@@ -120,26 +111,69 @@ const DirectorDashboard = () => {
     load();
   }, []);
 
+  const stats = useMemo(() => {
+    const now = new Date();
+    let approved = 0, inReview = 0, newThisMonth = 0;
+    docs.forEach((d) => {
+      const sid = getStatusId(d);
+      if (sid === 3) approved++;
+      if (sid === 2) inReview++;
+      if (d.date) {
+        const dt = new Date(d.date);
+        if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) newThisMonth++;
+      }
+    });
+    return [
+      { label: "Всего документов", value: docs.length },
+      { label: "Утверждено", value: approved },
+      { label: "На согласовании", value: inReview },
+      { label: "Новых за месяц", value: newThisMonth },
+    ];
+  }, [docs]);
+
+  const filterOptions = useMemo(() => {
+    const result: Record<string, FilterItem[]> = {};
+    FILTER_GROUPS.forEach((g) => {
+      result[g.key] = extractUnique(docs, g.key);
+    });
+    return result;
+  }, [docs]);
+
+  const filteredDocs = useMemo(() => {
+    return docs.filter((doc) => {
+      if (searchQuery && !doc.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      for (const g of FILTER_GROUPS) {
+        const sel = activeFilters[g.key];
+        if (sel && sel.size > 0) {
+          const docField = doc[g.key];
+          if (!Array.isArray(docField) || !docField.some((o: LinkedObj) => sel.has(o.recordId))) return false;
+        }
+      }
+      return true;
+    });
+  }, [docs, activeFilters, searchQuery]);
+
   const toggleFilter = (group: string, itemId: string) => {
     setActiveFilters((prev) => {
-      const next = new Map(Object.entries(prev).map(([k, v]) => [k, new Set(v)]));
-      const set = next.get(group)!;
-      if (set.has(itemId)) set.delete(itemId);
-      else set.add(itemId);
-      return Object.fromEntries(next);
+      const next = { ...prev };
+      const s = new Set(prev[group]);
+      if (s.has(itemId)) s.delete(itemId); else s.add(itemId);
+      next[group] = s;
+      return next;
     });
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="h-14 bg-[#0099ff] flex justify-between items-center px-4">
-        <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => navigate("/")}>
+      <header className="h-14 bg-primary flex justify-between items-center px-4">
+        <Button variant="ghost" className="text-primary-foreground hover:bg-white/20" onClick={() => navigate("/")}>
           <ArrowLeft className="w-4 h-4 mr-1" /> Выйти
         </Button>
-        <span className="text-white font-semibold">АТС Портал</span>
-        <span className="text-white text-sm opacity-80">Генеральный директор</span>
+        <span className="text-primary-foreground font-semibold">АТС Портал</span>
+        <span className="text-primary-foreground text-sm opacity-80">Генеральный директор</span>
       </header>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 mx-4">
         {loading ? (
           <div className="col-span-full flex justify-center py-8">
@@ -155,52 +189,98 @@ const DirectorDashboard = () => {
         )}
       </div>
 
-      {debugDocs && showDebug && (
-        <div className="mx-4 mt-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-muted-foreground">DEBUG: первые 3 документа (raw)</span>
-            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={() => setShowDebug(false)}>
-              Скрыть отладку
-            </Button>
-          </div>
-          <pre className="text-xs bg-gray-100 rounded p-3 overflow-x-auto max-h-60">
-            {JSON.stringify(debugDocs, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      <div className="mx-4 mt-6 space-y-4">
-        {filterGroups.map((group) => (
-          <div key={group.title}>
-            <div className="text-xs text-muted-foreground uppercase mb-2">{group.title}</div>
-            <div className="flex flex-wrap gap-2">
-              {group.items.map((item) => {
-                const active = activeFilters[group.title]?.has(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleFilter(group.title, item.id)}
-                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                      active ? "bg-[#0099ff] text-white" : "bg-card border text-foreground"
-                    }`}
-                  >
-                    {item.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      {/* Search */}
+      <div className="mx-4 mt-6">
+        <Input
+          placeholder="Поиск по названию..."
+          className="w-full rounded-lg"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
+      {/* Accordion Filters */}
       <div className="mx-4 mt-4">
-        <Input placeholder="Поиск по всей базе..." className="w-full rounded-lg" />
+        <Accordion type="multiple" className="space-y-2">
+          {FILTER_GROUPS.map((g) => {
+            const items = filterOptions[g.key] || [];
+            const selectedCount = activeFilters[g.key]?.size || 0;
+            if (items.length === 0) return null;
+            return (
+              <AccordionItem key={g.key} value={g.key} className="border rounded-lg px-3">
+                <AccordionTrigger className="text-sm py-3 hover:no-underline">
+                  {g.title}
+                  {selectedCount > 0 && (
+                    <span className="ml-2 text-xs text-primary">({selectedCount} выбрано)</span>
+                  )}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex flex-wrap gap-2 pb-2">
+                    {items.map((item) => {
+                      const active = activeFilters[g.key]?.has(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => toggleFilter(g.key, item.id)}
+                          className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                            active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground border"
+                          }`}
+                        >
+                          {item.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
       </div>
 
+      {/* "View as employee" button */}
       <div className="mx-4 mt-4">
-        <Button variant="outline" className="border-[#0099ff] text-[#0099ff] w-full">
+        <Button variant="outline" className="border-primary text-primary w-full">
           Посмотреть глазами сотрудника
         </Button>
+      </div>
+
+      {/* Document list */}
+      <div className="mx-4 mt-6 space-y-3 pb-8">
+        {!loading && filteredDocs.length === 0 && (
+          <p className="text-center text-muted-foreground text-sm py-8">Документы не найдены</p>
+        )}
+        {filteredDocs.map((doc) => {
+          const sid = getStatusId(doc);
+          const st = STATUS_MAP[sid];
+          const url = extractFileUrl(doc);
+          return (
+            <div key={doc.id} className="bg-card rounded-xl shadow-sm p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-sm line-clamp-2 flex-1">{doc.title}</p>
+                {st && (
+                  <Badge className={`shrink-0 ${st.className} border-0`}>{st.label}</Badge>
+                )}
+              </div>
+              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                {doc.date && <span>{formatDate(doc.date)}</span>}
+                {extractLinkedNames(doc.roles) && (
+                  <span className="truncate">{extractLinkedNames(doc.roles)}</span>
+                )}
+              </div>
+              {url && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 text-primary h-7 px-2 text-xs"
+                  onClick={() => window.open(url, "_blank")}
+                >
+                  <Download className="w-3 h-3 mr-1" /> Скачать
+                </Button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
