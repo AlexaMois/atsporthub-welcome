@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
+      console.log('FULL RECORD:', JSON.stringify(records[0]));
       console.log('Sample projects record values:', JSON.stringify(records[0]?.values));
       const projects = records.map((r: any) => ({
         id: r.id,
