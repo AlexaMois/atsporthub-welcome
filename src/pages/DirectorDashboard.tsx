@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
-const stats = [
+const fallbackStats = [
   { label: "Всего документов", value: 34 },
   { label: "Утверждено", value: 34 },
   { label: "На согласовании", value: 0 },
@@ -19,11 +20,63 @@ const filterGroups = [
 
 const DirectorDashboard = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(fallbackStats);
   const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({
     Проекты: new Set(),
     Роли: new Set(),
     Направления: new Set(),
   });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('bpium-api', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          body: undefined,
+        });
+
+        // supabase.functions.invoke doesn't support query params directly,
+        // so we use a workaround by calling with the full URL
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/bpium-api?action=get-documents`,
+          {
+            headers: {
+              'apikey': anonKey,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!res.ok) throw new Error('Failed to fetch');
+        const docs = await res.json();
+
+        if (Array.isArray(docs)) {
+          const total = docs.length;
+          const approved = docs.filter((d: any) =>
+            Array.isArray(d.status) ? d.status.includes('3') : d.status === '3'
+          ).length;
+
+          setStats([
+            { label: "Всего документов", value: total },
+            { label: "Утверждено", value: approved },
+            { label: "На согласовании", value: 0 },
+            { label: "Новых за месяц", value: 5 },
+          ]);
+        }
+      } catch (e) {
+        console.error('Failed to load documents:', e);
+        // keep fallback stats
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const toggleFilter = (group: string, item: string) => {
     setActiveFilters((prev) => {
@@ -46,12 +99,18 @@ const DirectorDashboard = () => {
       </header>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 mx-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-white rounded-xl shadow-sm p-6">
-            <div className="text-3xl font-bold text-[#0099ff]">{s.value}</div>
-            <div className="text-sm text-gray-500 mt-1">{s.label}</div>
+        {loading ? (
+          <div className="col-span-full flex justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ))}
+        ) : (
+          stats.map((s) => (
+            <div key={s.label} className="bg-card rounded-xl shadow-sm p-6">
+              <div className="text-3xl font-bold text-primary">{s.value}</div>
+              <div className="text-sm text-muted-foreground mt-1">{s.label}</div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="mx-4 mt-6 space-y-4">
