@@ -30,9 +30,9 @@ Never call Bpium API directly from frontend.
 
 - 2: title
 - 3: responsible (ФИО)
-- 4: directions (linked)
-- 5: roles (linked)
-- 6: projects (linked)
+- 4: directions (linked, catalog 55)
+- 5: roles (linked, catalog 57)
+- 6: projects (linked, catalog 54)
 - 13: source (linked)
 - 16: date (Дата внесения)
 - 17: tags
