@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Download, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface LinkedObj {
   catalogId: string;
@@ -69,58 +71,63 @@ const FILTER_GROUPS = [
   { key: "source", title: "Источники", action: "get-sources" },
 ] as const;
 
-const FilterPanel = ({
-  filterOptions,
-  activeFilters,
-  toggleFilter,
-  chipCounts,
+const FilterDropdown = ({
+  group,
+  title,
+  items,
+  activeSet,
+  onToggle,
+  counts,
 }: {
-  filterOptions: Record<string, FilterItem[]>;
-  activeFilters: Record<string, Set<string>>;
-  toggleFilter: (group: string, itemId: string) => void;
-  chipCounts: Record<string, number>;
+  group: string;
+  title: string;
+  items: FilterItem[];
+  activeSet: Set<string>;
+  onToggle: (group: string, itemId: string) => void;
+  counts: Record<string, number>;
 }) => (
-  <div>
-    {FILTER_GROUPS.map((g, gi) => {
-      const items = filterOptions[g.key] || [];
-      if (items.length === 0) return null;
-      return (
-        <div key={g.key}>
-          <h4 className={`text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2 ${gi > 0 ? "mt-4" : ""}`}>
-            {g.title}
-          </h4>
-          <div className="flex flex-wrap gap-1.5">
-            {items.map((item) => {
-              const active = activeFilters[g.key]?.has(item.id);
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => toggleFilter(g.key, item.id)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                    active
-                      ? "bg-[#0099ff] text-white border-[#0099ff]"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-[#0099ff] hover:text-[#0099ff]"
-                  }`}
-                >
-                  {item.name} ({chipCounts[`${g.key}:${item.id}`] || 0})
-                </button>
-              );
-            })}
-          </div>
+  <Popover>
+    <PopoverTrigger asChild>
+      <button className="text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white hover:border-[#0099ff] flex items-center gap-1.5 text-gray-600 whitespace-nowrap">
+        {title}
+        {activeSet.size > 0 && (
+          <span className="bg-[#0099ff] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {activeSet.size}
+          </span>
+        )}
+        <ChevronDown className="w-3 h-3" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent className="w-64 p-0 bg-white z-50" align="start">
+      <ScrollArea className="max-h-64">
+        <div className="p-2 space-y-1">
+          {items.map((item) => (
+            <label
+              key={item.id}
+              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm"
+            >
+              <Checkbox
+                checked={activeSet.has(item.id)}
+                onCheckedChange={() => onToggle(group, item.id)}
+              />
+              <span className="flex-1 truncate">{item.name}</span>
+              <span className="text-xs text-gray-400">
+                {counts[`${group}:${item.id}`] || 0}
+              </span>
+            </label>
+          ))}
         </div>
-      );
-    })}
-  </div>
+      </ScrollArea>
+    </PopoverContent>
+  </Popover>
 );
 
 const DirectorDashboard = () => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<any[]>([]);
   const [filterOptions, setFilterOptions] = useState<Record<string, FilterItem[]>>({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({
     projects: new Set(),
     roles: new Set(),
@@ -171,10 +178,10 @@ const DirectorDashboard = () => {
       }
     });
     return [
-      { label: "Всего документов", value: docs.length },
-      { label: "Утверждено", value: approved },
-      { label: "На согласовании", value: inReview },
-      { label: "Новых за месяц", value: newThisMonth },
+      { label: "Всего документов", shortLabel: "Всего", value: docs.length },
+      { label: "Утверждено", shortLabel: "Утв.", value: approved },
+      { label: "На согласовании", shortLabel: "Согл.", value: inReview },
+      { label: "Новых за месяц", shortLabel: "Новых", value: newThisMonth },
     ];
   }, [docs]);
 
@@ -218,8 +225,6 @@ const DirectorDashboard = () => {
     });
   };
 
-  const totalActiveFilters = Object.values(activeFilters).reduce((sum, s) => sum + s.size, 0);
-
   const extractRoleBadges = (doc: any) => {
     if (!Array.isArray(doc.roles)) return { visible: [], extra: 0 };
     const all = doc.roles.map((o: LinkedObj) => o.recordTitle).filter(Boolean);
@@ -243,105 +248,91 @@ const DirectorDashboard = () => {
       </header>
 
       {/* Stats */}
-      <div className="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-4 gap-2 md:gap-4">
         {loading ? (
           <div className="col-span-full flex justify-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-[#0099ff]" />
           </div>
         ) : (
           stats.map((s) => (
-            <div key={s.label} className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
-              <div className="text-2xl font-bold text-[#0a1628]">{s.value}</div>
-              <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
+            <div key={s.label} className="bg-white rounded-lg p-3 md:p-4 shadow-sm border-l-4 border-[#0099ff] pl-2 md:pl-3">
+              <div className="text-lg md:text-2xl font-bold text-[#0a1628]">{s.value}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">
+                <span className="hidden md:inline">{s.label}</span>
+                <span className="md:hidden">{s.shortLabel}</span>
+              </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Main content */}
-      <div className="max-w-6xl mx-auto px-4 mt-6 flex gap-6 pb-8">
-        {/* Sidebar filters — desktop */}
-        <aside className="hidden md:block w-56 shrink-0">
-          <div className="sticky top-20 bg-white rounded-lg shadow-sm p-4">
-            <FilterPanel
-              filterOptions={filterOptions}
-              activeFilters={activeFilters}
-              toggleFilter={toggleFilter}
-              chipCounts={chipCounts}
-            />
-          </div>
-        </aside>
+      {/* Main content — full width, no sidebar */}
+      <div className="max-w-6xl mx-auto px-4 mt-6 pb-8">
+        {/* Filters: horizontal row of dropdowns */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {FILTER_GROUPS.map((g) => {
+            const items = filterOptions[g.key] || [];
+            if (items.length === 0) return null;
+            return (
+              <FilterDropdown
+                key={g.key}
+                group={g.key}
+                title={g.title}
+                items={items}
+                activeSet={activeFilters[g.key] || new Set()}
+                onToggle={toggleFilter}
+                counts={chipCounts}
+              />
+            );
+          })}
+        </div>
 
-        {/* Content */}
-        <main className="flex-1 min-w-0">
-          {/* Mobile filters toggle */}
-          {isMobile && (
-            <div className="mb-4">
-              <button
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className="flex items-center gap-1.5 text-sm text-gray-600 bg-white rounded-lg shadow-sm px-3 py-2 w-full justify-between"
-              >
-                <span>Фильтры{totalActiveFilters > 0 ? ` (${totalActiveFilters} активных)` : ""}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
-              </button>
-              {filtersOpen && (
-                <div className="mt-2 bg-white rounded-lg shadow-sm p-4">
-                  <FilterPanel
-                    filterOptions={filterOptions}
-                    activeFilters={activeFilters}
-                    toggleFilter={toggleFilter}
-                    chipCounts={chipCounts}
-                  />
-                </div>
-              )}
-            </div>
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            placeholder="Поиск по названию..."
+            className="w-full h-11 pl-9 pr-4 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#0099ff] focus:border-transparent"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Document list */}
+        <div>
+          {!loading && filteredDocs.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-8">Документы не найдены</p>
           )}
-
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              placeholder="Поиск по названию..."
-              className="w-full h-11 pl-9 pr-4 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#0099ff] focus:border-transparent"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Document list */}
-          <div>
-            {!loading && filteredDocs.length === 0 && (
-              <p className="text-center text-gray-400 text-sm py-8">Документы не найдены</p>
-            )}
-            {filteredDocs.map((doc) => {
-              const sid = getStatusId(doc);
-              const st = STATUS_MAP[sid];
-              const url = extractFileUrl(doc);
-              const { visible: roleBadges, extra: roleExtra } = extractRoleBadges(doc);
-              return (
-                <div key={doc.id} className="py-4 border-b border-gray-100 hover:bg-gray-50 group relative">
-                  {/* Top line */}
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff] line-clamp-2 flex-1 transition-colors">
-                      {doc.title}
-                    </p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {st && (
-                        <Badge className={`${st.className} border-0 text-xs`}>{st.label}</Badge>
-                      )}
-                      {url && (
-                        <button
-                          onClick={() => window.open(url, "_blank")}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-[#0099ff] p-1"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
+          {filteredDocs.map((doc) => {
+            const sid = getStatusId(doc);
+            const st = STATUS_MAP[sid];
+            const url = extractFileUrl(doc);
+            const { visible: roleBadges, extra: roleExtra } = extractRoleBadges(doc);
+            return (
+              <div key={doc.id} className="py-4 border-b border-gray-100 hover:bg-gray-50 group relative">
+                {/* Top line */}
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff] line-clamp-2 flex-1 transition-colors">
+                    {doc.title}
+                  </p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {st && (
+                      <Badge className={`${st.className} border-0 text-xs`}>{st.label}</Badge>
+                    )}
+                    {url && (
+                      <button
+                        onClick={() => window.open(url, "_blank")}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-[#0099ff] p-1"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
-                  {/* Bottom line */}
-                  <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                    {doc.date && <span>{formatDate(doc.date)}</span>}
+                </div>
+                {/* Bottom line */}
+                <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                  {doc.date && <span>{formatDate(doc.date)}</span>}
+                  <div className="hidden md:flex items-center gap-2">
                     {roleBadges.map((name: string, i: number) => (
                       <span key={i} className="bg-gray-100 text-gray-500 rounded px-1.5 py-0.5">{name}</span>
                     ))}
@@ -350,10 +341,10 @@ const DirectorDashboard = () => {
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </main>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
