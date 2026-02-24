@@ -1,12 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import { Car, Wrench, Radio, Package, UserCheck, Crown, Lock } from "lucide-react";
+import { Car, Wrench, Radio, ClipboardCheck, ShieldCheck, HeartPulse, Cog, Zap, HardHat, Package, Briefcase, UserCheck, Users, Settings, Anchor, Crown, Lock } from "lucide-react";
 
 const roles = [
   { name: "Водитель", icon: Car },
-  { name: "Механик", icon: Wrench },
+  { name: "Механик РММ", icon: Wrench },
   { name: "Диспетчер", icon: Radio },
+  { name: "Механик по выпуску", icon: ClipboardCheck },
+  { name: "Специалист БДД, ОТ, ПБ и ОС", icon: ShieldCheck },
+  { name: "Медработник", icon: HeartPulse },
+  { name: "Машинист / оператор техники", icon: Cog },
+  { name: "Электромонтёр / Энергетик", icon: Zap },
+  { name: "Рабочий", icon: HardHat },
   { name: "Кладовщик", icon: Package },
+  { name: "Начальник участка / Руководитель проекта", icon: Briefcase },
   { name: "Специалист по кадрам", icon: UserCheck },
+  { name: "Все сотрудники", icon: Users },
+  { name: "Механик ЛТК", icon: Settings },
+  { name: "Стропальщик", icon: Anchor },
   { name: "Генеральный директор", icon: Crown },
 ];
 
@@ -27,7 +37,7 @@ const Index = () => {
       <main className="max-w-3xl mx-auto px-4 pb-12">
         <h1 className="text-2xl font-bold text-center mt-8 mb-8 text-foreground">Кто вы?</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {roles.map(({ name, icon: Icon }) => (
             <button
               key={name}
