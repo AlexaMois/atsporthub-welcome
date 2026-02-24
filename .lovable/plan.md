@@ -1,45 +1,59 @@
 
 
-# Edge Function bpium-api и интеграция с дашбордом
+# Динамические данные из Bpium: фильтры и статистика
 
-## 1. Новый файл: `supabase/functions/bpium-api/index.ts`
+## Проблема
 
-Edge function с двумя действиями, проксирующая запросы к Bpium API.
+Сейчас фильтры (Проекты, Роли, Направления) захардкожены в коде, а статистика "На согласовании" и "Новых за месяц" не рассчитывается из реальных данных.
 
-- CORS-заголовки на все ответы (включая OPTIONS preflight)
-- Basic Auth через секреты `BPIUM_LOGIN` и `BPIUM_PASSWORD`
-- Параметр `?action=` определяет действие:
+## Что нужно сделать
 
-**action=get-documents**
-- GET `https://neiroresheniya.bpium.ru/api/catalogs/56/records`
-- Маппинг полей: id, title (values['2']), responsible (values['3']), date (values['4']), source (values['5']), directions (values['6']), roles (values['7']), projects (values['8']), status (values['12']), version (values['13'])
+### 1. Edge Function: добавить новые actions
 
-**action=get-roles**
-- GET `https://neiroresheniya.bpium.ru/api/catalogs/57/records`
-- Маппинг: id, name (values['1'])
+Добавить в `supabase/functions/bpium-api/index.ts` три новых действия:
 
-## 2. Конфигурация: `supabase/config.toml`
+- **action=get-projects** -- GET `/api/v1/catalogs/54/records` -- вернуть `{ id, name: values['1'] }`
+- **action=get-directions** -- GET `/api/v1/catalogs/55/records` -- вернуть `{ id, name: values['1'] }`
+- **action=get-sources** -- GET `/api/v1/catalogs/59/records` -- вернуть `{ id, name: values['1'] }`
 
-Добавить секцию:
+Действие `get-roles` (каталог 57) уже существует.
+
+### 2. Статистика из реальных данных
+
+Рассчитать все 4 счётчика из массива документов:
+
+- **Всего документов** = `docs.length`
+- **Утверждено** = фильтр по `status` содержащему `'3'`
+- **На согласовании** = фильтр по `status` содержащему другое значение (например `'2'`), или `total - approved` если неизвестно
+- **Новых за месяц** = подсчёт документов, созданных в текущем месяце (используя поле `createdAt` из записей Bpium, которое нужно добавить в маппинг)
+
+### 3. Dashboard: динамические фильтры
+
+Убрать захардкоженный массив `filterGroups`. Вместо этого:
+
+- При загрузке параллельно вызвать 4 запроса: `get-roles`, `get-projects`, `get-directions`, `get-sources`
+- Построить группы фильтров динамически из полученных данных
+- Добавить группу "Источники" в фильтры
+
+### 4. Маппинг полей в Edge Function
+
+Добавить `createdAt` в маппинг документов для подсчёта "Новых за месяц":
 ```text
-[functions.bpium-api]
-verify_jwt = false
+createdAt: r.createdAt
 ```
-
-## 3. Изменения: `src/pages/DirectorDashboard.tsx`
-
-- Импорт `useEffect` и `supabase` клиента
-- Добавить состояния: `loading` (boolean), `stats` (динамические счётчики)
-- При монтировании (`useEffect`) вызвать `supabase.functions.invoke('bpium-api', { body: { action: 'get-documents' } })` (через query param в URL или body)
-- Рассчитать:
-  - «Всего документов» = data.length
-  - «Утверждено» = фильтр по status включающему '3'
-  - «На согласовании» и «Новых за месяц» = 0 и 5 (fallback, пока нет логики)
-- При ошибке — fallback значения: 34, 34, 0, 5
-- Спиннер (компонент Skeleton или Loader2 из lucide) пока loading === true
 
 ## Технические детали
 
-- Секреты `BPIUM_LOGIN` и `BPIUM_PASSWORD` уже настроены в проекте
-- Edge function вызывается через `supabase.functions.invoke()` — не по прямому URL
-- `verify_jwt = false` — функция публичная, авторизация к Bpium через Basic Auth на стороне сервера
+**Файлы для изменения:**
+
+1. `supabase/functions/bpium-api/index.ts`:
+   - Добавить обработчики `get-projects`, `get-directions`, `get-sources`
+   - Добавить `createdAt` в маппинг документов
+
+2. `src/pages/DirectorDashboard.tsx`:
+   - Убрать константу `filterGroups`
+   - Добавить состояния для roles, projects, directions, sources
+   - Загружать все данные параллельно через `Promise.all`
+   - Строить фильтры динамически
+   - Рассчитывать "На согласовании" и "Новых за месяц" из данных
+
