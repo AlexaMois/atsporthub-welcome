@@ -24,8 +24,11 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleClick = (roleName: string) => {
-    console.log(roleName);
-    navigate(`/role/${encodeURIComponent(roleName)}`);
+    if (roleName === "Генеральный директор") {
+      navigate("/login/director");
+    } else {
+      navigate(`/role/${encodeURIComponent(roleName)}`);
+    }
   };
 
   return (
