@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       console.log('Sample roles record values:', JSON.stringify(records[0]?.values));
       const roles = records.map((r: any) => ({
         id: r.id,
-        name: extractName(r.values?.['1']),
+        name: extractName(r.values?.['2']),
       }));
 
       return new Response(JSON.stringify(roles), {
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       console.log('Sample projects record values:', JSON.stringify(records[0]?.values));
       const projects = records.map((r: any) => ({
         id: r.id,
-        name: extractName(r.values?.['1']),
+        name: extractName(r.values?.['2']),
       }));
 
       return new Response(JSON.stringify(projects), {
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       console.log('Sample directions record values:', JSON.stringify(records[0]?.values));
       const directions = records.map((r: any) => ({
         id: r.id,
-        name: extractName(r.values?.['1']),
+        name: extractName(r.values?.['2']),
       }));
 
       return new Response(JSON.stringify(directions), {
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       console.log('Sample sources record values:', JSON.stringify(records[0]?.values));
       const sources = records.map((r: any) => ({
         id: r.id,
-        name: extractName(r.values?.['1']),
+        name: extractName(r.values?.['2']),
       }));
 
       return new Response(JSON.stringify(sources), {
