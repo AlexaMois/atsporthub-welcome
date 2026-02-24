@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
         id: r.id,
         title: r.values?.['2'],
         responsible: r.values?.['3'],
-        date: r.values?.['4'],
+        date: r.values?.['16'],
         source: r.values?.['5'],
         directions: r.values?.['6'],
         roles: r.values?.['7'],

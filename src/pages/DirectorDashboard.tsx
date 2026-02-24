@@ -54,15 +54,15 @@ const DirectorDashboard = () => {
           const approved = docs.filter((d: any) =>
             Array.isArray(d.status) ? d.status.includes("3") : d.status === "3"
           ).length;
-          const inReview = total - approved;
+          const inReview = docs.filter((d: any) =>
+            Array.isArray(d.status) ? d.status.includes("2") : d.status === "2"
+          ).length;
 
           const now = new Date();
-          const thisMonth = now.getMonth();
-          const thisYear = now.getFullYear();
           const newThisMonth = docs.filter((d: any) => {
-            if (!d.createdAt) return false;
-            const dt = new Date(d.createdAt);
-            return dt.getMonth() === thisMonth && dt.getFullYear() === thisYear;
+            if (!d.date) return false;
+            const dt = new Date(d.date);
+            return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
           }).length;
 
           setStats([
