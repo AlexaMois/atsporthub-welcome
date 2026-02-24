@@ -25,6 +25,14 @@ interface FilterItem {
 const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+const fetchAction = async (action: string) => {
+  const res = await fetch(`${FUNC_URL}?action=${action}`, {
+    headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
+  return res.json();
+};
+
 const getStatusId = (doc: any): number => {
   if (Array.isArray(doc.status)) return parseInt(doc.status[0]) || 0;
   return Number(doc.status) || 0;
@@ -60,31 +68,19 @@ const extractFileUrl = (doc: any): string | null => {
   return null;
 };
 
-const extractUnique = (docs: any[], field: string): FilterItem[] => {
-  const map = new Map<string, string>();
-  docs.forEach((doc) => {
-    const arr = doc[field];
-    if (!Array.isArray(arr)) return;
-    arr.forEach((o: LinkedObj) => {
-      if (o.recordId && o.recordTitle && !map.has(o.recordId)) {
-        map.set(o.recordId, o.recordTitle);
-      }
-    });
-  });
-  return Array.from(map, ([id, name]) => ({ id, name }));
-};
 
 const FILTER_GROUPS = [
-  { key: "projects", title: "Проекты" },
-  { key: "roles", title: "Роли" },
-  { key: "directions", title: "Направления" },
-  { key: "source", title: "Источники" },
+  { key: "projects", title: "Проекты", action: "get-projects" },
+  { key: "roles", title: "Роли", action: "get-roles" },
+  { key: "directions", title: "Направления", action: "get-directions" },
+  { key: "source", title: "Источники", action: "get-sources" },
 ] as const;
 
 const DirectorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<any[]>([]);
+  const [filterOptions, setFilterOptions] = useState<Record<string, FilterItem[]>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({
     projects: new Set(),
@@ -96,14 +92,26 @@ const DirectorDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${FUNC_URL}?action=get-documents`, {
-          headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+        const [docsData, roles, projects, directions, sources] = await Promise.all([
+          fetchAction("get-documents"),
+          fetchAction("get-roles"),
+          fetchAction("get-projects"),
+          fetchAction("get-directions"),
+          fetchAction("get-sources"),
+        ]);
+        if (Array.isArray(docsData)) setDocs(docsData);
+
+        const toItems = (data: any[]): FilterItem[] =>
+          Array.isArray(data) ? data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })) : [];
+
+        setFilterOptions({
+          projects: toItems(projects),
+          roles: toItems(roles),
+          directions: toItems(directions),
+          source: toItems(sources),
         });
-        if (!res.ok) throw new Error(`get-documents failed: ${res.status}`);
-        const data = await res.json();
-        if (Array.isArray(data)) setDocs(data);
       } catch (e) {
-        console.error("Failed to load documents:", e);
+        console.error("Failed to load data:", e);
       } finally {
         setLoading(false);
       }
@@ -131,13 +139,7 @@ const DirectorDashboard = () => {
     ];
   }, [docs]);
 
-  const filterOptions = useMemo(() => {
-    const result: Record<string, FilterItem[]> = {};
-    FILTER_GROUPS.forEach((g) => {
-      result[g.key] = extractUnique(docs, g.key);
-    });
-    return result;
-  }, [docs]);
+  // filterOptions now loaded from API in useEffect
 
   const filteredDocs = useMemo(() => {
     return docs.filter((doc) => {
