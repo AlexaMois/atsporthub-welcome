@@ -1,59 +1,30 @@
 
 
-# Динамические данные из Bpium: фильтры и статистика
+# Безопасное извлечение name в Edge Function
 
-## Проблема
+## Что будет сделано
 
-Сейчас фильтры (Проекты, Роли, Направления) захардкожены в коде, а статистика "На согласовании" и "Новых за месяц" не рассчитывается из реальных данных.
+В файле `supabase/functions/bpium-api/index.ts`:
 
-## Что нужно сделать
+1. Добавить вспомогательную функцию `extractName` в начало файла (после констант), которая безопасно извлекает строковое значение из поля Bpium (массив или строка):
 
-### 1. Edge Function: добавить новые actions
-
-Добавить в `supabase/functions/bpium-api/index.ts` три новых действия:
-
-- **action=get-projects** -- GET `/api/v1/catalogs/54/records` -- вернуть `{ id, name: values['1'] }`
-- **action=get-directions** -- GET `/api/v1/catalogs/55/records` -- вернуть `{ id, name: values['1'] }`
-- **action=get-sources** -- GET `/api/v1/catalogs/59/records` -- вернуть `{ id, name: values['1'] }`
-
-Действие `get-roles` (каталог 57) уже существует.
-
-### 2. Статистика из реальных данных
-
-Рассчитать все 4 счётчика из массива документов:
-
-- **Всего документов** = `docs.length`
-- **Утверждено** = фильтр по `status` содержащему `'3'`
-- **На согласовании** = фильтр по `status` содержащему другое значение (например `'2'`), или `total - approved` если неизвестно
-- **Новых за месяц** = подсчёт документов, созданных в текущем месяце (используя поле `createdAt` из записей Bpium, которое нужно добавить в маппинг)
-
-### 3. Dashboard: динамические фильтры
-
-Убрать захардкоженный массив `filterGroups`. Вместо этого:
-
-- При загрузке параллельно вызвать 4 запроса: `get-roles`, `get-projects`, `get-directions`, `get-sources`
-- Построить группы фильтров динамически из полученных данных
-- Добавить группу "Источники" в фильтры
-
-### 4. Маппинг полей в Edge Function
-
-Добавить `createdAt` в маппинг документов для подсчёта "Новых за месяц":
 ```text
-createdAt: r.createdAt
+const extractName = (val: any): string => {
+  if (!val) return '';
+  if (Array.isArray(val)) return String(val[0] || '');
+  return String(val);
+};
 ```
 
-## Технические детали
+2. Заменить `name: r.values?.['1']` на `name: extractName(r.values?.['1'])` в четырёх actions:
+   - `get-roles`
+   - `get-projects`
+   - `get-directions`
+   - `get-sources`
 
-**Файлы для изменения:**
+3. Добавить `console.log('Sample record values:', JSON.stringify(records[0]?.values))` перед маппингом в каждом из четырёх actions для отладки.
 
-1. `supabase/functions/bpium-api/index.ts`:
-   - Добавить обработчики `get-projects`, `get-directions`, `get-sources`
-   - Добавить `createdAt` в маппинг документов
+## Файл для изменения
 
-2. `src/pages/DirectorDashboard.tsx`:
-   - Убрать константу `filterGroups`
-   - Добавить состояния для roles, projects, directions, sources
-   - Загружать все данные параллельно через `Promise.all`
-   - Строить фильтры динамически
-   - Рассчитывать "На согласовании" и "Новых за месяц" из данных
+- `supabase/functions/bpium-api/index.ts`
 
