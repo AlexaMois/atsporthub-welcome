@@ -5,6 +5,12 @@ const corsHeaders = {
 
 const BASE_URL = 'https://neiroresheniya.bpium.ru';
 
+const extractName = (val: any): string => {
+  if (!val) return '';
+  if (Array.isArray(val)) return String(val[0] || '');
+  return String(val);
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -55,9 +61,10 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
+      console.log('Sample roles record values:', JSON.stringify(records[0]?.values));
       const roles = records.map((r: any) => ({
         id: r.id,
-        name: r.values?.['1'],
+        name: extractName(r.values?.['1']),
       }));
 
       return new Response(JSON.stringify(roles), {
@@ -72,9 +79,10 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
+      console.log('Sample projects record values:', JSON.stringify(records[0]?.values));
       const projects = records.map((r: any) => ({
         id: r.id,
-        name: r.values?.['1'],
+        name: extractName(r.values?.['1']),
       }));
 
       return new Response(JSON.stringify(projects), {
@@ -89,9 +97,10 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
+      console.log('Sample directions record values:', JSON.stringify(records[0]?.values));
       const directions = records.map((r: any) => ({
         id: r.id,
-        name: r.values?.['1'],
+        name: extractName(r.values?.['1']),
       }));
 
       return new Response(JSON.stringify(directions), {
@@ -106,9 +115,10 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
+      console.log('Sample sources record values:', JSON.stringify(records[0]?.values));
       const sources = records.map((r: any) => ({
         id: r.id,
-        name: r.values?.['1'],
+        name: extractName(r.values?.['1']),
       }));
 
       return new Response(JSON.stringify(sources), {
