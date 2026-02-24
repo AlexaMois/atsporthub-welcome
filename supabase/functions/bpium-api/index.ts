@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
         projects: r.values?.['8'],
         status: r.values?.['12'],
         version: r.values?.['13'],
+        createdAt: r.createdAt,
       }));
 
       return new Response(JSON.stringify(documents), {
@@ -60,6 +61,57 @@ Deno.serve(async (req) => {
       }));
 
       return new Response(JSON.stringify(roles), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get-projects') {
+      const res = await fetch(`${BASE_URL}/api/v1/catalogs/54/records`, {
+        headers: authHeaders,
+      });
+      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
+      const records = await res.json();
+
+      const projects = records.map((r: any) => ({
+        id: r.id,
+        name: r.values?.['1'],
+      }));
+
+      return new Response(JSON.stringify(projects), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get-directions') {
+      const res = await fetch(`${BASE_URL}/api/v1/catalogs/55/records`, {
+        headers: authHeaders,
+      });
+      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
+      const records = await res.json();
+
+      const directions = records.map((r: any) => ({
+        id: r.id,
+        name: r.values?.['1'],
+      }));
+
+      return new Response(JSON.stringify(directions), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get-sources') {
+      const res = await fetch(`${BASE_URL}/api/v1/catalogs/59/records`, {
+        headers: authHeaders,
+      });
+      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
+      const records = await res.json();
+
+      const sources = records.map((r: any) => ({
+        id: r.id,
+        name: r.values?.['1'],
+      }));
+
+      return new Response(JSON.stringify(sources), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

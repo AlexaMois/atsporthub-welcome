@@ -4,77 +4,111 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+interface FilterItem {
+  id: string;
+  name: string;
+}
 
-const fallbackStats = [
-  { label: "Всего документов", value: 34 },
-  { label: "Утверждено", value: 34 },
-  { label: "На согласовании", value: 0 },
-  { label: "Новых за месяц", value: 5 },
-];
+interface FilterGroup {
+  title: string;
+  items: FilterItem[];
+}
 
-const filterGroups = [
-  { title: "Проекты", items: ["ГПНЗ", "ВЧНГ", "СН", "ДНГКМ", "АУП"] },
-  { title: "Роли", items: ["Водитель", "Механик РММ", "Диспетчер"] },
-  { title: "Направления", items: ["БДД", "ОТ", "ПБ", "ГСМ"] },
-];
+const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const fetchAction = async (action: string) => {
+  const res = await fetch(`${FUNC_URL}?action=${action}`, {
+    headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
+  return res.json();
+};
 
 const DirectorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(fallbackStats);
-  const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({
-    Проекты: new Set(),
-    Роли: new Set(),
-    Направления: new Set(),
-  });
+  const [stats, setStats] = useState([
+    { label: "Всего документов", value: 0 },
+    { label: "Утверждено", value: 0 },
+    { label: "На согласовании", value: 0 },
+    { label: "Новых за месяц", value: 0 },
+  ]);
+  const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([]);
+  const [activeFilters, setActiveFilters] = useState<Record<string, Set<string>>>({});
 
   useEffect(() => {
-    const fetchData = async () => {
+    const load = async () => {
       try {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const [docs, roles, projects, directions, sources] = await Promise.all([
+          fetchAction("get-documents"),
+          fetchAction("get-roles"),
+          fetchAction("get-projects"),
+          fetchAction("get-directions"),
+          fetchAction("get-sources"),
+        ]);
 
-        const res = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/bpium-api?action=get-documents`,
-          {
-            headers: {
-              'apikey': anonKey,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (!res.ok) throw new Error('Failed to fetch');
-        const docs = await res.json();
-
+        // Stats
         if (Array.isArray(docs)) {
           const total = docs.length;
           const approved = docs.filter((d: any) =>
-            Array.isArray(d.status) ? d.status.includes('3') : d.status === '3'
+            Array.isArray(d.status) ? d.status.includes("3") : d.status === "3"
           ).length;
+          const inReview = total - approved;
+
+          const now = new Date();
+          const thisMonth = now.getMonth();
+          const thisYear = now.getFullYear();
+          const newThisMonth = docs.filter((d: any) => {
+            if (!d.createdAt) return false;
+            const dt = new Date(d.createdAt);
+            return dt.getMonth() === thisMonth && dt.getFullYear() === thisYear;
+          }).length;
 
           setStats([
             { label: "Всего документов", value: total },
             { label: "Утверждено", value: approved },
-            { label: "На согласовании", value: 0 },
-            { label: "Новых за месяц", value: 5 },
+            { label: "На согласовании", value: inReview },
+            { label: "Новых за месяц", value: newThisMonth },
           ]);
         }
+
+        // Filter groups
+        const groups: FilterGroup[] = [];
+        const initial: Record<string, Set<string>> = {};
+
+        const addGroup = (title: string, data: any[]) => {
+          if (Array.isArray(data) && data.length > 0) {
+            groups.push({
+              title,
+              items: data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })),
+            });
+            initial[title] = new Set();
+          }
+        };
+
+        addGroup("Проекты", projects);
+        addGroup("Роли", roles);
+        addGroup("Направления", directions);
+        addGroup("Источники", sources);
+
+        setFilterGroups(groups);
+        setActiveFilters(initial);
       } catch (e) {
-        console.error('Failed to load documents:', e);
+        console.error("Failed to load data:", e);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    load();
   }, []);
 
-  const toggleFilter = (group: string, item: string) => {
+  const toggleFilter = (group: string, itemId: string) => {
     setActiveFilters((prev) => {
       const next = new Map(Object.entries(prev).map(([k, v]) => [k, new Set(v)]));
       const set = next.get(group)!;
-      if (set.has(item)) set.delete(item);
-      else set.add(item);
+      if (set.has(itemId)) set.delete(itemId);
+      else set.add(itemId);
       return Object.fromEntries(next);
     });
   };
@@ -107,19 +141,19 @@ const DirectorDashboard = () => {
       <div className="mx-4 mt-6 space-y-4">
         {filterGroups.map((group) => (
           <div key={group.title}>
-            <div className="text-xs text-gray-400 uppercase mb-2">{group.title}</div>
+            <div className="text-xs text-muted-foreground uppercase mb-2">{group.title}</div>
             <div className="flex flex-wrap gap-2">
               {group.items.map((item) => {
-                const active = activeFilters[group.title]?.has(item);
+                const active = activeFilters[group.title]?.has(item.id);
                 return (
                   <button
-                    key={item}
-                    onClick={() => toggleFilter(group.title, item)}
+                    key={item.id}
+                    onClick={() => toggleFilter(group.title, item.id)}
                     className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                      active ? "bg-[#0099ff] text-white" : "bg-white border text-gray-700"
+                      active ? "bg-[#0099ff] text-white" : "bg-card border text-foreground"
                     }`}
                   >
-                    {item}
+                    {item.name}
                   </button>
                 );
               })}
