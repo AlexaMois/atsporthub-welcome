@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,13 @@ import {
 
 export default function PortalLayout() {
   const navigate = useNavigate();
+  const [showWelcome, setShowWelcome] = useState(() => sessionStorage.getItem("welcome_shown") !== "true");
+
+  useEffect(() => {
+    if (showWelcome) {
+      sessionStorage.setItem("welcome_shown", "true");
+    }
+  }, [showWelcome]);
 
   useEffect(() => {
     if (sessionStorage.getItem("director_auth") !== "true") {
@@ -52,6 +59,27 @@ export default function PortalLayout() {
                 </Button>
               </div>
             </header>
+            {showWelcome && (
+              <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-[#0099ff] rounded-r-lg flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-[#0a1628]">Добрый день, Максим Игоревич!</p>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {new Date().toLocaleDateString("ru-RU", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowWelcome(false)}
+                  className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-auto">
               <Outlet />
             </div>
