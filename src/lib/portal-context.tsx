@@ -191,16 +191,13 @@ export const PortalProvider = ({ children }: { children: ReactNode }) => {
 
   const setExclusiveFilter = (group: string, itemId: string) => {
     setActiveFilters((prev) => {
-      const next: Record<string, Set<string>> = {};
-      for (const key of Object.keys(prev)) {
-        next[key] = new Set();
-      }
+      const next = { ...prev };
       const current = prev[group];
       if (current && current.size === 1 && current.has(itemId)) {
-        // clicking the same item again — clear it
-        return next;
+        next[group] = new Set();
+      } else {
+        next[group] = new Set([itemId]);
       }
-      next[group] = new Set([itemId]);
       return next;
     });
   };

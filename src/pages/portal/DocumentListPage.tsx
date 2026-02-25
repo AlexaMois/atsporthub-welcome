@@ -14,13 +14,21 @@ interface LinkedObj {
   recordTitle: string;
 }
 
+const sanitizeFilename = (name: string): string => {
+  return name
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/\s+/g, "_")
+    .substring(0, 200)
+    .replace(/^\.+/, "_") || "document";
+};
+
 const handleDownload = async (url: string, filename?: string) => {
   try {
     const res = await fetch(url);
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = filename || url.split("/").pop() || "document";
+    a.download = sanitizeFilename(filename || url.split("/").pop() || "document");
     a.click();
     URL.revokeObjectURL(a.href);
   } catch {

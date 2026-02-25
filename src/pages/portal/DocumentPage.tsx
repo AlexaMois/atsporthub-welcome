@@ -11,6 +11,14 @@ import {
   extractFileUrl,
 } from "@/lib/portal-context";
 
+const sanitizeFilename = (name: string): string => {
+  return name
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/\s+/g, "_")
+    .substring(0, 200)
+    .replace(/^\.+/, "_") || "document";
+};
+
 const getViewUrl = (url: string): string => {
   const lower = url.toLowerCase();
   if (lower.match(/\.(docx?|xlsx?|pptx?)(\?|$)/)) {
@@ -19,13 +27,16 @@ const getViewUrl = (url: string): string => {
   return url;
 };
 
+const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
+const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
+
 const handleDownload = async (url: string, filename?: string) => {
   try {
     const res = await fetch(url);
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = filename || url.split("/").pop() || "document";
+    a.download = sanitizeFilename(filename || url.split("/").pop() || "document");
     a.click();
     URL.revokeObjectURL(a.href);
   } catch {
@@ -97,22 +108,38 @@ const DocumentPage = () => {
         </div>
       )}
 
-      {fileUrl && (
-        <div className="flex gap-3">
-          <Button
-            onClick={() => window.open(getViewUrl(fileUrl), "_blank")}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-          >
-            <ExternalLink className="w-4 h-4" /> Открыть файл
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleDownload(fileUrl, doc.title)}
-            className="gap-2"
-          >
-            <Download className="w-4 h-4" /> Скачать
-          </Button>
-        </div>
+      {/* File preview */}
+      {fileUrl ? (
+        <>
+          {(isPdf(fileUrl) || isOffice(fileUrl)) ? (
+            <iframe
+              src={getViewUrl(fileUrl)}
+              className="w-full h-[600px] rounded-lg border border-gray-200 mb-6"
+              title="Предпросмотр документа"
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground mb-6">
+              Предпросмотр недоступен для этого типа файла.
+            </p>
+          )}
+          <div className="flex gap-3">
+            <Button
+              onClick={() => window.open(getViewUrl(fileUrl), "_blank")}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+            >
+              <ExternalLink className="w-4 h-4" /> Открыть файл
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDownload(fileUrl, doc.title)}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" /> Скачать
+            </Button>
+          </div>
+        </>
+      ) : (
+        <p className="text-gray-400 text-center py-8">Файл не прикреплён</p>
       )}
     </div>
   );
