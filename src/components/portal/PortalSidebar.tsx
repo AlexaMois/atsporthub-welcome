@@ -32,9 +32,9 @@ export function PortalSidebar() {
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     projects: true,
-    roles: true,
-    directions: true,
-    source: true,
+    roles: false,
+    directions: false,
+    source: false,
   });
 
   const handleAllDocs = () => {

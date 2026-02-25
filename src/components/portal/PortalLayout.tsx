@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
 import { PortalSidebar } from "./PortalSidebar";
@@ -43,7 +43,9 @@ export default function PortalLayout() {
           <SidebarInset>
             <header className="h-14 bg-[#0099ff] flex items-center justify-between px-4 shrink-0">
               <div className="flex items-center gap-2">
-                <SidebarTrigger className="text-white hover:bg-white/20" />
+                <SidebarTrigger className="text-white hover:bg-white/20">
+                  <Menu className="h-5 w-5" />
+                </SidebarTrigger>
                 <span className="text-white font-semibold text-sm">АТС Портал</span>
               </div>
               <div className="flex items-center gap-3">
