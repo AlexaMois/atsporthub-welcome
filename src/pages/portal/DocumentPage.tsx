@@ -37,8 +37,10 @@ const handleDownload = async (url: string, filename?: string) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = sanitizeFilename(filename || url.split("/").pop() || "document");
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 100);
   } catch {
     window.open(url, "_blank");
   }
