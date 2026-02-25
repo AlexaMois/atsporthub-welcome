@@ -7,8 +7,39 @@ import { PortalSidebar } from "./PortalSidebar";
 import {
   SidebarProvider,
   SidebarInset,
-  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
+
+function PortalHeader({ onLogout }: { onLogout: () => void }) {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <header className="h-14 bg-[#0099ff] flex items-center justify-between px-4 shrink-0">
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-white/20 h-9 w-9"
+          onClick={toggleSidebar}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <span className="text-white font-semibold text-sm">АТС Портал</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-white text-sm opacity-80 hidden md:inline">Генеральный директор</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white hover:bg-white/20 gap-1"
+          onClick={onLogout}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Выйти</span>
+        </Button>
+      </div>
+    </header>
+  );
+}
 
 export default function PortalLayout() {
   const navigate = useNavigate();
@@ -41,26 +72,7 @@ export default function PortalLayout() {
         <div className="min-h-screen flex w-full bg-[#f5f7fa]">
           <PortalSidebar />
           <SidebarInset>
-            <header className="h-14 bg-[#0099ff] flex items-center justify-between px-4 shrink-0">
-              <div className="flex items-center gap-2">
-                <SidebarTrigger className="text-white hover:bg-white/20">
-                  <Menu className="h-5 w-5" />
-                </SidebarTrigger>
-                <span className="text-white font-semibold text-sm">АТС Портал</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-white text-sm opacity-80 hidden md:inline">Генеральный директор</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20 gap-1"
-                  onClick={handleLogout}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Выйти</span>
-                </Button>
-              </div>
-            </header>
+            <PortalHeader onLogout={handleLogout} />
             {showWelcome && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-[#0099ff] rounded-r-lg flex items-center justify-between">
                 <div>
