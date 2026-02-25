@@ -1,104 +1,181 @@
-# Редизайн макета DirectorDashboard
+# Портал знаний АТС — полный редизайн навигации
 
-Изменения затрагивают ТОЛЬКО визуальную часть (JSX + CSS-классы). Вся логика данных, фильтрации, состояний остается без изменений.
+## Обзор
 
-## Что изменится
+Превращаем плоский дашборд с фильтрами в полноценный портал знаний с постоянным боковым меню (Sidebar) в стиле GitBook и отдельной страницей просмотра документа.
 
-### 1. Header
+## Архитектура
 
-- Кнопка "Посмотреть глазами сотрудника" переносится в header справа (рядом с "Генеральный директор")
-- Стиль: text-sm underline text-white opacity-80 hover:opacity-100
-- Удаляется из основного контента
+```text
+/dashboard/director
+  +-- KnowledgePortal (layout с sidebar)
+       |
+       +-- Sidebar (постоянная навигация)
+       |     - Все документы
+       |     - Проекты (submenu: список проектов)
+       |     - Направления (submenu: список направлений)
+       |     - По ролям (submenu: список ролей)
+       |     - Источники (submenu: список источников)
+       |
+       +-- Content area (правая часть)
+             - /dashboard/director — Stats + Document list
+             - /dashboard/director/doc/:docId — Страница документа
+```
 
-### 2. Stats (4 карточки)
+## Новые файлы
 
-- Числа: text-2xl font-bold text-[#0a1628] (вместо text-3xl text-primary)
-- Подпись: text-xs text-gray-500 uppercase tracking-wide mt-1
-- Карточка: bg-white rounded-lg p-4 shadow-sm border-l-4 border-[#0099ff] pl-3
+### 1. `src/lib/portal-context.tsx` — общий контекст данных
 
-### 3. Search
+Хранит загруженные docs, filterOptions, chipCounts, activeFilters, searchQuery, toggleFilter.
+Оборачивает весь портал, чтобы данные не перезагружались при навигации.
 
-- h-11 px-4 text-sm border-gray-200 rounded-lg bg-white
-- Иконка поиска (Search из lucide-react) внутри поля слева
-- focus:ring-2 ring-[#0099ff]
+- `PortalProvider` — загружает данные один раз (useEffect с fetchAction)
+- `usePortal()` — хук для доступа к данным из любого компонента
+- Все состояния (docs, filterOptions, activeFilters, searchQuery) живут здесь
 
-### 4. Filters — из Accordion в sidebar-панель
+### 2. `src/components/portal/PortalSidebar.tsx` — боковое меню
 
-- **Desktop (md+):** aside w-56, sticky top-20, bg-white rounded-lg shadow-sm p-4
-- **Mobile:** кнопка "Фильтры (N активных)" раскрывает блок inline
-- Заголовки групп: text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2 mt-4
-- Чипы: text-xs px-2.5 py-1 rounded-full border border-gray-200 bg-white text-gray-600
-- Активный чип: bg-[#0099ff] text-white border-[#0099ff]
-- Убираем Accordion-компоненты, используем обычные div
+Использует Shadcn Sidebar компоненты:
 
-### 5. Document list — GitBook-стиль
+- `SidebarGroup` "Все документы" — ссылка на `/dashboard/director`
+- `SidebarGroup` "Проекты" — раскрывающийся список из `filterOptions.projects`
+- `SidebarGroup` "Направления" — из `filterOptions.directions`
+- `SidebarGroup` "По ролям" — из `filterOptions.roles`
+- `SidebarGroup` "Источники" — из `filterOptions.source`
 
-- Вместо карточек — строки с border-b border-gray-100
-- Строка: py-4 hover:bg-gray-50 group
-- Верхняя линия: title (text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff]) + badge справа
-- Нижняя линия: дата (text-xs text-gray-400) + role-бейджи (max 3, потом "+N")
-- Role badge: text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5
-- Кнопка скачивания: иконка Download, видна только при hover (opacity-0 group-hover:opacity-100)
+Клик по пункту submenu:
 
-### 6. Общая структура страницы (desktop)
+- Вызывает `toggleFilter(group, itemId)` из контекста
+- Устанавливает ТОЛЬКО этот фильтр (сбрасывает остальные в этой группе)
+- Навигирует на `/dashboard/director` если на другой странице
+- Активный пункт подсвечивается через проверку `activeFilters`
 
-Stats row (4 cards) — OUTSIDE the flex layout, 
+Стили: минималистичные, bg-white, текст серый, активный — text-[#0099ff], иконка-счетчик документов справа от каждого пункта.
 
-above the sidebar+content block.
+### 3. `src/components/portal/PortalLayout.tsx` — обертка layout
 
-max-w-6xl mx-auto px-4 mt-6 grid grid-cols-4 gap-4
+```text
+<PortalProvider>
+  <SidebarProvider>
+    <div className="min-h-screen flex w-full">
+      <PortalSidebar />
+      <SidebarInset>
+        <header>...</header>
+        <Outlet />
+      </SidebarInset>
+    </div>
+  </SidebarProvider>
+</PortalProvider>
+```
+
+Header с "АТС Портал", SidebarTrigger, "Генеральный директор", кнопка "Выйти".
+
+### 4. `src/pages/portal/DocumentListPage.tsx` — список документов
+
+Берет данные из `usePortal()`. Содержит:
+
+- Stats row (4 карточки с border-l-4)
+- Search input
+- Фильтр-чипы (текущие активные, с кнопкой x для удаления)
+- GitBook-стиль список документов (как сейчас, но каждая строка — ссылка на `/dashboard/director/doc/:docId`)
+
+### 5. `src/pages/portal/DocumentPage.tsx` — страница документа
+
+Получает docId из URL params, находит документ в `usePortal().docs`.
+
+Макет:
+
+```text
++------------------------------------------+
+| <- Назад к списку                        |
+|                                          |
+| ЗАГОЛОВОК ДОКУМЕНТА (text-2xl font-bold) |
+|                                          |
+| Статус: [badge]   Дата: 01.01.2025      |
+| Версия: 1.0                             |
+|                                          |
+| Направления: БДД, Экология              |
+| Роли: Водитель, Механик                 |
+| Проекты: Проект А                       |
+| Источник: Внутренний                     |
+|                                          |
+| [Открыть файл]  [Скачать]               |
++------------------------------------------+
+```
+
+- Кнопка "Открыть" — открывает файл в новой вкладке
+- Кнопка "Скачать" — скачивает файл (download attribute)
+- Метаданные отображаются как key-value пары с серыми лейблами
+- Стиль: max-w-3xl, много воздуха (py-8, gap-6)
+
+## Изменения в существующих файлах
+
+### `src/App.tsx` — новые маршруты
+
+```text
+<Route path="/dashboard/director" element={<PortalLayout />}>
+  <Route index element={<DocumentListPage />} />
+  <Route path="doc/:docId" element={<DocumentPage />} />
+</Route>
+```
+
+Удаляется текущий `<Route path="/dashboard/director" element={<DirectorDashboard />} />`.
+
+### `src/pages/DirectorDashboard.tsx`
+
+Файл больше не используется как самостоятельная страница. Логика (fetchAction, STATUS_MAP, formatDate, extractLinkedNames, extractFileUrl, FILTER_GROUPS) переносится в контекст и утилиты. Сам файл можно удалить или оставить как deprecated.
+
+## Сохранение состояния при навигации
+
+- Все данные (docs, filters, search) живут в `PortalProvider` (React Context)
+- При переходе "список -> документ -> назад" фильтры и поиск сохраняются
+- Sidebar всегда видна и отражает текущие активные фильтры
+- Мобильная версия: sidebar скрывается, доступна через SidebarTrigger (hamburger)
+
+## Стилистика GitBook
+
+- Шрифт: Inter (уже используется), спокойные размеры text-sm / text-base
+- Цвета: серая гамма для текста, синий #0099ff только для акцентов и активных элементов
+- Много whitespace: py-8, px-6, gap-6
+- Документ-строки: border-b border-gray-100, hover:bg-gray-50
+- Sidebar: bg-white, text-gray-600, hover:text-[#0099ff], активный: font-medium text-[#0099ff]
+
+Move these functions AS-IS to portal-context.tsx, 
+
+do not rewrite them:
+
+- extractLinkedNames(arr) 
+
+- extractFileUrl(doc)
+
+- STATUS_MAP
+
+- formatDate(dateStr)
+
+Field mapping in get-documents stays unchanged in Edge Function.
+
+Password protection logic from DirectorLogin.tsx 
+
+must remain — PortalLayout checks sessionStorage 
+
+for 'director_auth' before rendering, 
+
+redirects to /login/director if missing.
+
+activeFilters in PortalProvider must be 
+
+Record<string, Set<string>> — do not convert to arrays.
+
+toggleFilter uses Set.add/delete.
 
 &nbsp;
 
-```text
-+--------------------------------------------------+
-| Header: [Выйти]  АТС Портал  [ссылка] Ген.дир.  |
-+--------------------------------------------------+
-| Stats: 4 карточки в ряд (max-w-6xl mx-auto)      |
-+--------------------------------------------------+
-|  max-w-6xl mx-auto flex gap-6                     |
-|  +----------+  +------------------------------+  |
-|  | Filters  |  | Search input                 |  |
-|  | w-56     |  | Document rows...             |  |
-|  | sticky   |  |                              |  |
-|  +----------+  +------------------------------+  |
-+--------------------------------------------------+
-```
+## Порядок реализации
 
-### 7. Mobile layout
-
-- Все блоки вертикально, aside скрыт
-- Вместо sidebar — кнопка "Фильтры (N активных)" раскрывает фильтры inline
-- Новый state: `filtersOpen` (boolean) для мобильного toggle
-
-## Технические детали
-
-### Файл: `src/pages/DirectorDashboard.tsx`
-
-**Импорты:**
-
-- Убрать: Accordion, AccordionItem, AccordionTrigger, AccordionContent
-- Добавить: Search из lucide-react, ChevronDown из lucide-react
-- Добавить: useIsMobile из `@/hooks/use-mobile`
-
-**Новый state:**
-
-- `const [filtersOpen, setFiltersOpen] = useState(false)` — для мобильного toggle фильтров
-
-**Вычисляемое значение:**
-
-- `totalActiveFilters` — сумма всех активных фильтров для отображения в кнопке "Фильтры (N)"
-
-**Новый компонент (inline):** `FilterPanel` — содержит заголовки групп и чипы, используется и в sidebar, и в мобильном развернутом блоке
-
-**JSX-структура:**
-
-1. Header — добавить ссылку "Посмотреть глазами сотрудника"
-2. Stats row — max-w-6xl mx-auto, обновленные стили карточек
-3. Main content area:
-  - Обертка: `max-w-6xl mx-auto px-4 mt-6 flex gap-6`
-  - aside (hidden на mobile, block на md+): FilterPanel
-  - main (flex-1 min-w-0): search + document list
-4. Mobile: кнопка-toggle + FilterPanel (показывается по filtersOpen)
-
-Никаких изменений в: fetchAction, getStatusId, STATUS_MAP, formatDate, extractLinkedNames, extractFileUrl, FILTER_GROUPS, useEffect, stats, chipCounts, filteredDocs, toggleFilter.
+1. Создать `src/lib/portal-context.tsx` (контекст с данными)
+2. Создать `src/components/portal/PortalSidebar.tsx`
+3. Создать `src/components/portal/PortalLayout.tsx`
+4. Создать `src/pages/portal/DocumentListPage.tsx`
+5. Создать `src/pages/portal/DocumentPage.tsx`
+6. Обновить `src/App.tsx` — новые маршруты
+7. Удалить или пометить deprecated `src/pages/DirectorDashboard.tsx`
