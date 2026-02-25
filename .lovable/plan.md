@@ -1,113 +1,84 @@
-# Исправление фильтрации, файлов и адаптивности
+# Исправление фильтрации и предпросмотра документов
 
-## 1. Комбинированная фильтрация (sidebar)
+## 1. Фильтрация: один выбор внутри группы, AND между группами
 
-**Проблема:** `PortalSidebar` вызывает `setExclusiveFilter()`, который сбрасывает ВСЕ группы и ставит только один фильтр. Нужно использовать `toggleFilter()`.
-
-**Решение:**
-
-**Файл: `src/components/portal/PortalSidebar.tsx**`
-
-- Заменить `setExclusiveFilter` на `toggleFilter` в деструктуризации `usePortal()`
-- В `handleItemClick` вызывать `toggleFilter(group, itemId)` вместо `setExclusiveFilter(group, itemId)`
-
-Это позволит выбрать "ВЧНГ" в проектах, затем "Водитель" в ролях — оба тега останутся активными, и документы отфильтруются по связке "проект И роль".
-
----
-
-## 2. Открытие и скачивание файлов
-
-**Проблема:** Поле `fileUrl` приходит как пустой массив `[]`. Реальная ссылка на файл берётся из `doc.responsible[0].url` (fallback в `extractFileUrl`). URL ведут на публичный бакет Supabase — PDF открывается нормально, но `.docx` браузер не умеет отображать, показывая пустую страницу.
+**Проблема:** `toggleFilter` позволяет выбрать несколько значений внутри одной группы, а старый `setExclusiveFilter` сбрасывал ВСЕ группы при выборе.
 
 **Решение:**
 
-**Файл: `src/pages/portal/DocumentPage.tsx**`
+**Файл: `src/lib/portal-context.tsx**` — исправить `setExclusiveFilter`:
 
-- Для кнопки "Открыть файл": если файл `.docx`/`.doc`/`.xlsx`/`.pptx`, открывать через Google Docs Viewer:
-`https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`
-- Для PDF/изображений — открывать напрямую (`window.open`)
-- Для кнопки "Скачать": добавить fetch + blob-download, чтобы гарантировать скачивание вместо навигации
+- Сбрасывать только текущую группу, сохраняя остальные
+- Если кликнули тот же пункт — снять выбор только в этой группе
 
-**Файл: `src/pages/portal/DocumentListPage.tsx**`
+```typescript
+const setExclusiveFilter = (group: string, itemId: string) => {
+  setActiveFilters((prev) => {
+    const next = { ...prev };
+    const current = prev[group];
+    if (current && current.size === 1 && current.has(itemId)) {
+      next[group] = new Set(); // снять выбор
+    } else {
+      next[group] = new Set([itemId]); // выбрать один
+    }
+    return next;
+  });
+};
+```
 
-- Аналогичная логика для иконки скачивания в строке документа
+**Файл: `src/components/portal/PortalSidebar.tsx**` — использовать `setExclusiveFilter` вместо `toggleFilter`:
+
+- Деструктуризация: заменить `toggleFilter` на `setExclusiveFilter`
+- `handleItemClick` вызывает `setExclusiveFilter(group, itemId)`
+
+Результат: выбор "ВЧНГ" в проектах + "Водитель" в ролях = два активных фильтра, AND-логика в `filteredDocs` уже работает корректно.
 
 ---
 
-## 3. Мобильная адаптивность (проверка)
+## 2. Предпросмотр файла внутри портала (iframe)
 
-Текущая реализация уже использует `SidebarProvider` + `SidebarTrigger` (гамбургер в header). По документации Shadcn Sidebar, на мобильных (`< 768px`) sidebar автоматически скрывается и открывается как sheet. Дополнительных изменений не требуется — нужно только протестировать.
+**Файл: `src/pages/portal/DocumentPage.tsx**` — заменить кнопку "Открыть файл" на встроенный предпросмотр:
+
+- Определить тип файла по URL:
+  - PDF: показать в `<iframe src={url}>` напрямую
+  - DOCX/XLSX/PPTX: показать в `<iframe src={gviewUrl}>`
+  - Остальное: fallback-ссылка "Открыть в новой вкладке"
+- iframe: `w-full h-[600px] rounded-lg border border-gray-200 mb-6`
+- Кнопка "Открыть файл" остается как дополнительная опция под iframe
+  &nbsp;
+  Show iframe only if fileUrl is not empty.
+  If fileUrl is empty — show message 
+  «Файл не прикреплён» text-gray-400 text-center py-8
+  instead of iframe.
+  &nbsp;
+
+---
+
+## 3. Скачивание с санитайзом имени файла
+
+**Файл: `src/pages/portal/DocumentPage.tsx**` и `src/pages/portal/DocumentListPage.tsx`**:
+
+Добавить функцию санитайза:
+
+```typescript
+const sanitizeFilename = (name: string): string => {
+  return name
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/\s+/g, "_")
+    .substring(0, 200)
+    .replace(/^\.+/, "_") || "document";
+};
+```
+
+В `handleDownload` использовать `sanitizeFilename(filename)` перед присвоением `a.download`.
 
 ---
 
 ## Технические детали
 
-### Изменение 1: `src/components/portal/PortalSidebar.tsx`
+### Порядок изменений
 
-Строка 27: заменить `setExclusiveFilter` на `toggleFilter`:
-
-```typescript
-const { filterOptions, activeFilters, toggleFilter, clearFilters, chipCounts } = usePortal();
-```
-
-Строка 45-46: заменить вызов:
-
-```typescript
-const handleItemClick = (group: string, itemId: string) => {
-  toggleFilter(group, itemId);
-  if (!isDocListPage) navigate("/dashboard/director");
-};
-```
-
-### Изменение 2: `src/pages/portal/DocumentPage.tsx`
-
-Добавить helper-функцию для определения типа файла и выбора стратегии открытия:
-
-```typescript
-const getViewUrl = (url: string): string => {
-  const lower = url.toLowerCase();
-  if (lower.match(/\.(docx?|xlsx?|pptx?)(\?|$)/)) {
-    return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-  }
-  return url;
-};
-
-const handleDownload = async (url: string, filename?: string) => {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename || url.split("/").pop() || "document";
-    a.click();
-    URL.revokeObjectURL(a.href);
-  } catch {
-    window.open(url, "_blank");
-  }
-};
-```
-
-Обновить кнопки:
-
-- "Открыть файл" — `window.open(getViewUrl(fileUrl), "_blank")`
-- "Скачать" — `onClick={handleDownload(fileUrl, doc.title)}`
-
-### Изменение 3: `src/pages/portal/DocumentListPage.tsx`
-
-Аналогичная логика `handleDownload` для иконки скачивания в строке документа (вместо простого `window.open`).
-
-// Неправильно — вызовется сразу при рендере:
-
-onClick={handleDownload(fileUrl, doc.title)}
-
-// Правильно — обернуть в стрелочную функцию:
-
-onClick={() => handleDownload(fileUrl, doc.title)}
-
-&nbsp;
-
-### Порядок
-
-1. Исправить sidebar (toggleFilter) — 1 файл
-2. Исправить файлы (DocumentPage + DocumentListPage) — 2 файла
-3. Протестировать на мобильном viewport
+1. `src/lib/portal-context.tsx` — исправить `setExclusiveFilter` (строки 192-206)
+2. `src/components/portal/PortalSidebar.tsx` — использовать `setExclusiveFilter` (строки 27, 45-46)
+3. `src/pages/portal/DocumentPage.tsx` — добавить iframe-предпросмотр + санитайз
+4. `src/pages/portal/DocumentListPage.tsx` — добавить санитайз в handleDownload
