@@ -1,41 +1,37 @@
-# Welcome Banner in PortalLayout
 
-## What
+# Две проблемы: группы в сайдбаре и мобильная кнопка
 
-Add a dismissible welcome banner between the header and the Outlet that shows once per session.
+## Проблема 1: Все группы открыты одновременно
 
-## Changes
+Сейчас в `PortalSidebar.tsx` начальное состояние `openGroups` — все `true`. Из-за этого при первом открытии дашборда сайдбар выглядит перегруженным.
 
-**File: `src/components/portal/PortalLayout.tsx**`
-
-1. Add `useState` to the React import.
-2. Initialize banner visibility: `useState(() => sessionStorage.getItem("welcome_shown") !== "true")`.
-3. On mount (when banner is visible), set `sessionStorage.setItem("welcome_shown", "true")`.
-4. Insert banner JSX between `</header>` and `<div className="flex-1 overflow-auto">`, showing greeting with today's date in Russian locale and a dismiss button.
-
-No other components (sidebar, header, Outlet, logout) are touched.
-
-## Technical Detail
+**Решение**: Изменить начальное состояние — только первая группа (`projects`) открыта, остальные (`roles`, `directions`, `source`) закрыты.
 
 ```text
-PortalLayout
-  <SidebarInset>
-    <header> ... </header>        <-- untouched
-    {showWelcome && <WelcomeBanner />}  <-- NEW
-    <div className="flex-1 overflow-auto">
-      <Outlet />                  <-- untouched
-    </div>
-  </SidebarInset>
+// Было:
+{ projects: true, roles: true, directions: true, source: true }
+
+// Станет:
+{ projects: true, roles: false, directions: false, source: false }
 ```
 
-- `showWelcome` state initializes from `sessionStorage` (false if already shown).
-- On first render when visible, `sessionStorage.setItem("welcome_shown","true")` is called via `useEffect`.
-- Dismiss button sets `showWelcome` to false (hides for current view; next session reload won't show again because sessionStorage is already set).
+**Файл**: `src/components/portal/PortalSidebar.tsx`, строка 33-38.
 
-In src/components/portal/PortalLayout.tsx, 
+---
 
-in the welcome banner text change greeting to:
+## Проблема 2: На мобильном нет кнопки-гамбургера
 
-"Добрый день, Максим Игоревич!"
+`SidebarTrigger` уже есть в хедере (`PortalLayout.tsx`, строка 46), и компонент Sidebar от shadcn/ui на мобильных должен автоматически скрываться и открываться через Sheet. Однако кнопка может быть не видна или не работать корректно на маленьких экранах.
 
-&nbsp;
+**Решение**: Убедиться, что `SidebarTrigger` отображается всегда (без `hidden` классов) и добавить ему явную иконку-гамбургер для мобильных, чтобы кнопка была заметной.
+
+**Файл**: `src/components/portal/PortalLayout.tsx`, строка 46 — проверить, что нет скрывающих классов, и при необходимости добавить `Menu` иконку для наглядности.
+
+---
+
+## Итого
+
+| Файл | Что меняется |
+|---|---|
+| `PortalSidebar.tsx` | Начальное состояние групп: только `projects: true`, остальные `false` |
+| `PortalLayout.tsx` | Проверка видимости `SidebarTrigger` на мобильных, добавление иконки если нужно |
