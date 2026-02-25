@@ -46,6 +46,7 @@ const buildDownloadFilename = (title: string | undefined, docId: string | undefi
 const handleDownload = async (url: string, title?: string, docId?: string) => {
   try {
     const res = await fetch(url);
+    if (!res.ok) throw new Error("fetch failed");
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -55,7 +56,13 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(a.href), 100);
   } catch {
-    window.open(url, "_blank");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = buildDownloadFilename(title, docId, url);
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 };
 
