@@ -1,158 +1,104 @@
-# GitBook-архитектура портала АТС
+# Редизайн макета DirectorDashboard
 
-Полная переработка архитектуры фронтенда: добавление боковой навигации, страницы просмотра документа с PDF-viewer, упрощение типографики и разделение интерфейса директора/сотрудника.
+Изменения затрагивают ТОЛЬКО визуальную часть (JSX + CSS-классы). Вся логика данных, фильтрации, состояний остается без изменений.
 
-## Обзор изменений
+## Что изменится
 
-```text
-БЫЛО:
-/ (выбор роли) -> /dashboard/director (плоский список)
+### 1. Header
 
-СТАНЕТ:
-/ (выбор роли) -> /dashboard/director (sidebar + список + страница документа)
-                -> /role/:roleName (sidebar + список, БЕЗ метрик)
+- Кнопка "Посмотреть глазами сотрудника" переносится в header справа (рядом с "Генеральный директор")
+- Стиль: text-sm underline text-white opacity-80 hover:opacity-100
+- Удаляется из основного контента
 
-Sidebar навигация:
-+------------------+------------------------------------+
-| Все документы    | Список документов / Страница док-та |
-| Проекты >        |                                    |
-| Направления >    |                                    |
-| По ролям >       |                                    |
-| Источники >      |                                    |
-+------------------+------------------------------------+
-```
+### 2. Stats (4 карточки)
 
-## Шаг 1. Общий Layout с Sidebar
+- Числа: text-2xl font-bold text-[#0a1628] (вместо text-3xl text-primary)
+- Подпись: text-xs text-gray-500 uppercase tracking-wide mt-1
+- Карточка: bg-white rounded-lg p-4 shadow-sm border-l-4 border-[#0099ff] pl-3
 
-### Новый файл: `src/components/DocumentLayout.tsx`
+### 3. Search
 
-Обертка с `SidebarProvider` + `Sidebar` + `main`. Используется и для директора, и для сотрудника.
+- h-11 px-4 text-sm border-gray-200 rounded-lg bg-white
+- Иконка поиска (Search из lucide-react) внутри поля слева
+- focus:ring-2 ring-[#0099ff]
 
-- Sidebar содержит 5 навигационных секций: "Все документы", "Проекты", "Направления", "По ролям", "Источники"
-- Каждая секция — `SidebarGroup` с раскрывающимся списком элементов (загружаются из API)
-- Клик по элементу устанавливает фильтр (не переход по URL)
-- На мобильном — sidebar скрывается в Sheet (стандартное поведение shadcn Sidebar)
-- Header остается сверху с `SidebarTrigger`
+### 4. Filters — из Accordion в sidebar-панель
 
-### Новый файл: `src/components/DocumentSidebar.tsx`
+- **Desktop (md+):** aside w-56, sticky top-20, bg-white rounded-lg shadow-sm p-4
+- **Mobile:** кнопка "Фильтры (N активных)" раскрывает блок inline
+- Заголовки групп: text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2 mt-4
+- Чипы: text-xs px-2.5 py-1 rounded-full border border-gray-200 bg-white text-gray-600
+- Активный чип: bg-[#0099ff] text-white border-[#0099ff]
+- Убираем Accordion-компоненты, используем обычные div
 
-Компонент sidebar с навигацией. Принимает `filterOptions`, `activeFilters`, `onFilterSelect`, `role` (для условного отображения).
+### 5. Document list — GitBook-стиль
 
-Структура sidebar:
+- Вместо карточек — строки с border-b border-gray-100
+- Строка: py-4 hover:bg-gray-50 group
+- Верхняя линия: title (text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff]) + badge справа
+- Нижняя линия: дата (text-xs text-gray-400) + role-бейджи (max 3, потом "+N")
+- Role badge: text-xs bg-gray-100 text-gray-500 rounded px-1.5 py-0.5
+- Кнопка скачивания: иконка Download, видна только при hover (opacity-0 group-hover:opacity-100)
 
-- "Все документы" — сброс фильтров
-- Проекты — список проектов из API, клик = установка фильтра по проекту
-- Направления — аналогично
-- По ролям — аналогично
-- Источники — аналогично
-- Активный элемент подсвечивается `bg-muted text-primary`
+### 6. Общая структура страницы (desktop)
 
-## Шаг 2. Страница документа
+Stats row (4 cards) — OUTSIDE the flex layout, 
 
-### Новый файл: `src/pages/DocumentPage.tsx`
+above the sidebar+content block.
 
-Маршрут: `/document/:docId`
-
-При клике на документ в списке — переход на эту страницу (вместо скачивания).
-
-Содержимое:
-
-- Кнопка "Назад" к списку
-- Заголовок документа — `text-2xl font-bold` с воздухом
-- Метаданные: дата, версия, статус (badge), ответственный
-- Две кнопки: "Открыть в браузере" + "Скачать" — крупные, заметные
-- Предпросмотр: если URL содержит `.pdf` — `<iframe src={url}>` как PDF viewer; если другая ссылка — `<iframe src={url}>` для просмотра
-- Связанные документы (будущее расширение — пока placeholder)
-
-## Шаг 3. Обновление DirectorDashboard
-
-### Файл: `src/pages/DirectorDashboard.tsx`
-
-- Оборачивается в `DocumentLayout`
-- Метрики (stats) остаются ТОЛЬКО для директора
-- Список документов: клик по строке ведет на `/document/:docId` (через `navigate`)
-- Убираем hover-download (теперь скачивание на странице документа)
-- Типографика:
-  - Заголовок строки: `text-base` (было `text-sm`)
-  - Межстрочное: `py-5` (было `py-4`)
-  - Дата и метаинфо: `text-sm text-gray-400` с отступом `mt-2`
-  - Убираем лишние бейджи ролей из строк (оставляем только статус)
-  - Больше воздуха: `space-y-1` между элементами строки
-
-## Шаг 4. Экран сотрудника (RolePage)
-
-### Файл: `src/pages/RolePage.tsx`
-
-- Оборачивается в тот же `DocumentLayout`
-- БЕЗ метрик (stats) — чистый список документов
-- Sidebar фильтры работают так же
-- Документы фильтруются по выбранной роли автоматически
-- Клик по документу ведет на `/document/:docId`
-
-## Шаг 5. Маршрутизация
-
-### Файл: `src/App.tsx`
-
-Добавить маршрут:
-
-```
-/document/:docId -> DocumentPage
-```
-
-## Шаг 6. Типографика и стиль (везде)
-
-- Заголовки документов: `text-base font-medium` (крупнее)
-- Подписи: `text-sm text-gray-400` (мягче)
-- Убрать лишние рамки — минимум `border`, максимум `border-b` для разделителей
-- Межстрочный интервал: `leading-relaxed`
-- Отступы между строками: `py-5`
-- Поиск: остается, но с увеличенным `h-12` и `text-base`
-
-## Технические детали
-
-### Новые файлы (4):
-
-1. `src/components/DocumentLayout.tsx` — layout wrapper с SidebarProvider
-2. `src/components/DocumentSidebar.tsx` — sidebar навигация
-3. `src/pages/DocumentPage.tsx` — страница просмотра документа
-4. `src/hooks/useDocuments.ts` — вынос логики загрузки данных в shared hook (используется и директором, и сотрудником)
-
-### Изменяемые файлы (3):
-
-1. `src/App.tsx` — добавить маршрут `/document/:docId`
-2. `src/pages/DirectorDashboard.tsx` — обернуть в layout, упростить строки, убрать download hover
-3. `src/pages/RolePage.tsx` — реализовать полноценный экран с документами
-
-### Shared hook: `useDocuments.ts`
-
-Вынос `fetchAction`, загрузки документов и фильтров из DirectorDashboard в переиспользуемый hook:
-
-- `useDocuments()` возвращает `{ docs, filterOptions, loading }`
-- Используется в DirectorDashboard и RolePage
-- Вся логика фетчинга остается без изменений
-
-In useDocuments.ts: export only { docs, filterOptions, 
-
-loading, chipCounts }.
-
-Do NOT move activeFilters, filteredDocs, toggleFilter 
-
-into the hook — keep them in each page component.
-
-activeFilters state must remain Record<string, Set<string>>
-
-RolePage: on mount, find role id from filterOptions.roles 
-
-where name === roleName param, then set it as active 
-
-filter automatically.
+max-w-6xl mx-auto px-4 mt-6 grid grid-cols-4 gap-4
 
 &nbsp;
 
-### Что НЕ меняется:
+```text
++--------------------------------------------------+
+| Header: [Выйти]  АТС Портал  [ссылка] Ген.дир.  |
++--------------------------------------------------+
+| Stats: 4 карточки в ряд (max-w-6xl mx-auto)      |
++--------------------------------------------------+
+|  max-w-6xl mx-auto flex gap-6                     |
+|  +----------+  +------------------------------+  |
+|  | Filters  |  | Search input                 |  |
+|  | w-56     |  | Document rows...             |  |
+|  | sticky   |  |                              |  |
+|  +----------+  +------------------------------+  |
++--------------------------------------------------+
+```
 
-- Edge function `bpium-api/index.ts`
-- Логика фильтрации (AND между группами)
-- Статус-маппинг (STATUS_MAP)
-- Пароль директора
-- Страница выбора роли (Index.tsx)
+### 7. Mobile layout
+
+- Все блоки вертикально, aside скрыт
+- Вместо sidebar — кнопка "Фильтры (N активных)" раскрывает фильтры inline
+- Новый state: `filtersOpen` (boolean) для мобильного toggle
+
+## Технические детали
+
+### Файл: `src/pages/DirectorDashboard.tsx`
+
+**Импорты:**
+
+- Убрать: Accordion, AccordionItem, AccordionTrigger, AccordionContent
+- Добавить: Search из lucide-react, ChevronDown из lucide-react
+- Добавить: useIsMobile из `@/hooks/use-mobile`
+
+**Новый state:**
+
+- `const [filtersOpen, setFiltersOpen] = useState(false)` — для мобильного toggle фильтров
+
+**Вычисляемое значение:**
+
+- `totalActiveFilters` — сумма всех активных фильтров для отображения в кнопке "Фильтры (N)"
+
+**Новый компонент (inline):** `FilterPanel` — содержит заголовки групп и чипы, используется и в sidebar, и в мобильном развернутом блоке
+
+**JSX-структура:**
+
+1. Header — добавить ссылку "Посмотреть глазами сотрудника"
+2. Stats row — max-w-6xl mx-auto, обновленные стили карточек
+3. Main content area:
+  - Обертка: `max-w-6xl mx-auto px-4 mt-6 flex gap-6`
+  - aside (hidden на mobile, block на md+): FilterPanel
+  - main (flex-1 min-w-0): search + document list
+4. Mobile: кнопка-toggle + FilterPanel (показывается по filtersOpen)
+
+Никаких изменений в: fetchAction, getStatusId, STATUS_MAP, formatDate, extractLinkedNames, extractFileUrl, FILTER_GROUPS, useEffect, stats, chipCounts, filteredDocs, toggleFilter.

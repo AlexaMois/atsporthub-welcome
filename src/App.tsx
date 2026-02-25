@@ -7,7 +7,6 @@ import Index from "./pages/Index";
 import RolePage from "./pages/RolePage";
 import PasswordPage from "./pages/PasswordPage";
 import DirectorDashboard from "./pages/DirectorDashboard";
-import DocumentPage from "./pages/DocumentPage";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -22,7 +21,6 @@ const App = () => (
           <Route path="/role/:roleName" element={<RolePage />} />
           <Route path="/login/director" element={<PasswordPage />} />
           <Route path="/dashboard/director" element={<DirectorDashboard />} />
-          <Route path="/document/:docId" element={<DocumentPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
