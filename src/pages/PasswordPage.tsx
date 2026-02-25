@@ -12,6 +12,7 @@ const PasswordPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === "atc2026") {
+      sessionStorage.setItem("director_auth", "true");
       navigate("/dashboard/director");
     } else {
       setError(true);
