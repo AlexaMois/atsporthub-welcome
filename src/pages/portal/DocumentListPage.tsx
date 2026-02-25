@@ -22,13 +22,34 @@ const sanitizeFilename = (name: string): string => {
     .replace(/^\.+/, "_") || "document";
 };
 
-const handleDownload = async (url: string, filename?: string) => {
+const getExtensionFromUrl = (url: string): string => {
+  const match = url.match(/\.([a-zA-Z0-9]{1,5})(?:\?|$)/);
+  return match ? `.${match[1].toLowerCase()}` : "";
+};
+
+const buildDownloadFilename = (title: string | undefined, docId: string | undefined, url: string): string => {
+  let base = "";
+  if (title && typeof title === "string" && title.trim().length > 0) {
+    base = title.trim();
+  } else if (docId) {
+    base = `document_${docId}`;
+  } else {
+    base = "document";
+  }
+  const ext = getExtensionFromUrl(url);
+  if (ext && !base.toLowerCase().endsWith(ext)) {
+    base += ext;
+  }
+  return sanitizeFilename(base);
+};
+
+const handleDownload = async (url: string, title?: string, docId?: string) => {
   try {
     const res = await fetch(url);
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = sanitizeFilename(filename || url.split("/").pop() || "document");
+    a.download = buildDownloadFilename(title, docId, url);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -139,7 +160,7 @@ const DocumentListPage = () => {
                     {st && <Badge className={`${st.className} border-0 text-xs`}>{st.label}</Badge>}
                     {url && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDownload(url, doc.title); }}
+                        onClick={(e) => { e.stopPropagation(); handleDownload(url, doc.title, String(doc.id)); }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
                       >
                         <Download className="w-4 h-4" />
