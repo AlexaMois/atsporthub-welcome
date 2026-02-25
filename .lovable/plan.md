@@ -1,153 +1,158 @@
-# Упрощение макета DirectorDashboard — убрать нагромождение
+# GitBook-архитектура портала АТС
 
-## Проблемы (обнаружены при тестировании)
+Полная переработка архитектуры фронтенда: добавление боковой навигации, страницы просмотра документа с PDF-viewer, упрощение типографики и разделение интерфейса директора/сотрудника.
 
-1. **Фильтры занимают слишком много места** — 16 ролей, 12 направлений, 5 проектов, 8 источников = ~40 чипов. На мобильном раскрытые фильтры полностью вытесняют документы с экрана
-2. **На мобильном слишком много элементов до контента** — статистика (4 карточки) + кнопка фильтров + поиск, и только потом документы
-3. **Бейджи ролей в строках документов** добавляют визуальный шум, особенно на мобильном
-
-## Что изменится
-
-### 1. Фильтры — из чипов в выпадающие Select
-
-Вместо десятков чипов — 4 компактных выпадающих списка (Popover + Checkbox), расположенных горизонтально над списком документов.
+## Обзор изменений
 
 ```text
-Desktop:
-[Проекты v] [Роли v] [Направления v] [Источники v]  [Поиск...]
+БЫЛО:
+/ (выбор роли) -> /dashboard/director (плоский список)
 
-Mobile:
-[Проекты v] [Роли v]
-[Направления v] [Источники v]
-[Поиск...]
+СТАНЕТ:
+/ (выбор роли) -> /dashboard/director (sidebar + список + страница документа)
+                -> /role/:roleName (sidebar + список, БЕЗ метрик)
+
+Sidebar навигация:
++------------------+------------------------------------+
+| Все документы    | Список документов / Страница док-та |
+| Проекты >        |                                    |
+| Направления >    |                                    |
+| По ролям >       |                                    |
+| Источники >      |                                    |
++------------------+------------------------------------+
 ```
 
-Каждый dropdown при клике открывает Popover со списком чекбоксов (множественный выбор). Выбранные элементы показываются как маленький счётчик на кнопке: "Роли (3)".
+## Шаг 1. Общий Layout с Sidebar
 
-### 2. Убрать sidebar
+### Новый файл: `src/components/DocumentLayout.tsx`
 
-Sidebar `aside w-56` удаляется полностью. Фильтры теперь в одной строке над поиском. Контент занимает всю ширину.
+Обертка с `SidebarProvider` + `Sidebar` + `main`. Используется и для директора, и для сотрудника.
 
-```text
-+--------------------------------------------------+
-| Header                                            |
-+--------------------------------------------------+
-| Stats: 4 карточки (без изменений)                 |
-+--------------------------------------------------+
-| max-w-6xl mx-auto                                 |
-| [Проекты v] [Роли v] [Направления v] [Источники v]|
-| [Поиск по названию...]                            |
-| Document rows...                                  |
-+--------------------------------------------------+
-```
+- Sidebar содержит 5 навигационных секций: "Все документы", "Проекты", "Направления", "По ролям", "Источники"
+- Каждая секция — `SidebarGroup` с раскрывающимся списком элементов (загружаются из API)
+- Клик по элементу устанавливает фильтр (не переход по URL)
+- На мобильном — sidebar скрывается в Sheet (стандартное поведение shadcn Sidebar)
+- Header остается сверху с `SidebarTrigger`
 
-### 3. Статистика на мобильном — компактнее
+### Новый файл: `src/components/DocumentSidebar.tsx`
 
-На мобильном: 4 карточки в одну строку (grid-cols-4), числа уменьшить до text-lg, подписи сократить. Это освободит вертикальное пространство.
+Компонент sidebar с навигацией. Принимает `filterOptions`, `activeFilters`, `onFilterSelect`, `role` (для условного отображения).
 
-### 4. Бейджи ролей в строках — скрыть на мобильном
+Структура sidebar:
 
-На мобильном (hidden на экранах < md) скрыть бейджи ролей в строках документов, оставить только дату и статус. На десктопе оставить как есть.
+- "Все документы" — сброс фильтров
+- Проекты — список проектов из API, клик = установка фильтра по проекту
+- Направления — аналогично
+- По ролям — аналогично
+- Источники — аналогично
+- Активный элемент подсвечивается `bg-muted text-primary`
 
-## Технические детали
+## Шаг 2. Страница документа
+
+### Новый файл: `src/pages/DocumentPage.tsx`
+
+Маршрут: `/document/:docId`
+
+При клике на документ в списке — переход на эту страницу (вместо скачивания).
+
+Содержимое:
+
+- Кнопка "Назад" к списку
+- Заголовок документа — `text-2xl font-bold` с воздухом
+- Метаданные: дата, версия, статус (badge), ответственный
+- Две кнопки: "Открыть в браузере" + "Скачать" — крупные, заметные
+- Предпросмотр: если URL содержит `.pdf` — `<iframe src={url}>` как PDF viewer; если другая ссылка — `<iframe src={url}>` для просмотра
+- Связанные документы (будущее расширение — пока placeholder)
+
+## Шаг 3. Обновление DirectorDashboard
 
 ### Файл: `src/pages/DirectorDashboard.tsx`
 
-**Импорты — добавить:**
+- Оборачивается в `DocumentLayout`
+- Метрики (stats) остаются ТОЛЬКО для директора
+- Список документов: клик по строке ведет на `/document/:docId` (через `navigate`)
+- Убираем hover-download (теперь скачивание на странице документа)
+- Типографика:
+  - Заголовок строки: `text-base` (было `text-sm`)
+  - Межстрочное: `py-5` (было `py-4`)
+  - Дата и метаинфо: `text-sm text-gray-400` с отступом `mt-2`
+  - Убираем лишние бейджи ролей из строк (оставляем только статус)
+  - Больше воздуха: `space-y-1` между элементами строки
 
-- `Popover, PopoverTrigger, PopoverContent` из `@/components/ui/popover`
-- `Checkbox` из `@/components/ui/checkbox`
-- `ScrollArea` из `@/components/ui/scroll-area`
+## Шаг 4. Экран сотрудника (RolePage)
 
-**Импорты — убрать:**
+### Файл: `src/pages/RolePage.tsx`
 
-- `useIsMobile` (больше не нужен)
+- Оборачивается в тот же `DocumentLayout`
+- БЕЗ метрик (stats) — чистый список документов
+- Sidebar фильтры работают так же
+- Документы фильтруются по выбранной роли автоматически
+- Клик по документу ведет на `/document/:docId`
 
-**Удалить:**
+## Шаг 5. Маршрутизация
 
-- Компонент `FilterPanel` (заменяется inline dropdown-ами)
-- State `filtersOpen` (больше не нужен)
-- Вычисление `totalActiveFilters` (заменяется подсчётом по группе)
-- Весь блок `aside` (sidebar)
-- Весь блок mobile filters toggle
+### Файл: `src/App.tsx`
 
-**Новый компонент (inline) — `FilterDropdown`:**
+Добавить маршрут:
 
-```typescript
-const FilterDropdown = ({ group, title, items, activeSet, onToggle, counts }) => (
-  <Popover>
-    <PopoverTrigger asChild>
-      <button className="text-sm px-3 py-2 rounded-lg border border-gray-200 
-        bg-white hover:border-[#0099ff] flex items-center gap-1.5 
-        text-gray-600 whitespace-nowrap">
-        {title}
-        {activeSet.size > 0 && (
-          <span className="bg-[#0099ff] text-white text-xs rounded-full 
-            w-5 h-5 flex items-center justify-center">
-            {activeSet.size}
-          </span>
-        )}
-        <ChevronDown className="w-3 h-3" />
-      </button>
-    </PopoverTrigger>
-    <PopoverContent className="w-64 p-0" align="start">
-      <ScrollArea className="max-h-64">
-        <div className="p-2 space-y-1">
-          {items.map(item => (
-            <label key={item.id} 
-              className="flex items-center gap-2 px-2 py-1.5 rounded 
-                hover:bg-gray-50 cursor-pointer text-sm">
-              <Checkbox 
-                checked={activeSet.has(item.id)} 
-                onCheckedChange={() => onToggle(group, item.id)} 
-              />
-              <span className="flex-1 truncate">{item.name}</span>
-              <span className="text-xs text-gray-400">
-                {counts[`${group}:${item.id}`] || 0}
-              </span>
-            </label>
-          ))}
-        </div>
-      </ScrollArea>
-    </PopoverContent>
-  </Popover>
-)
+```
+/document/:docId -> DocumentPage
 ```
 
-**JSX — новая структура main content:**
+## Шаг 6. Типографика и стиль (везде)
 
-```text
-<div className="max-w-6xl mx-auto px-4 mt-6 pb-8">
-  <!-- Фильтры: горизонтальная строка -->
-  <div className="flex flex-wrap gap-2 mb-3">
-    <FilterDropdown ... /> x4
-  </div>
-  
-  <!-- Поиск -->
-  <div className="relative mb-4">...</div>
-  
-  <!-- Документы -->
-  <div>...</div>
-</div>
-```
+- Заголовки документов: `text-base font-medium` (крупнее)
+- Подписи: `text-sm text-gray-400` (мягче)
+- Убрать лишние рамки — минимум `border`, максимум `border-b` для разделителей
+- Межстрочный интервал: `leading-relaxed`
+- Отступы между строками: `py-5`
+- Поиск: остается, но с увеличенным `h-12` и `text-base`
 
-**Бейджи ролей в строках документов:**
+## Технические детали
 
-- Обернуть в `<div className="hidden md:flex items-center gap-2">` — скрыть на мобильном
+### Новые файлы (4):
 
-**Stats на мобильном:**
+1. `src/components/DocumentLayout.tsx` — layout wrapper с SidebarProvider
+2. `src/components/DocumentSidebar.tsx` — sidebar навигация
+3. `src/pages/DocumentPage.tsx` — страница просмотра документа
+4. `src/hooks/useDocuments.ts` — вынос логики загрузки данных в shared hook (используется и директором, и сотрудником)
 
-- Изменить grid с `grid-cols-2 lg:grid-cols-4` на `grid-cols-4`
-- Добавить responsive размеры: `text-lg md:text-2xl` для чисел
-- Сокращённые подписи на мобильном через `hidden md:inline` / `md:hidden`  
-  
-activeFilters state remains Record<string, Set<string>> — do not change to arrays
-  &nbsp;
+### Изменяемые файлы (3):
 
-### Что НЕ меняется
+1. `src/App.tsx` — добавить маршрут `/document/:docId`
+2. `src/pages/DirectorDashboard.tsx` — обернуть в layout, упростить строки, убрать download hover
+3. `src/pages/RolePage.tsx` — реализовать полноценный экран с документами
 
-- fetchAction, getStatusId, STATUS_MAP, formatDate, extractLinkedNames, extractFileUrl
-- FILTER_GROUPS, useEffect, stats, chipCounts, filteredDocs, toggleFilter
-- Вся логика фильтрации (AND-логика между группами, множественный выбор внутри группы)
-- Header
-- Стили строк документов (кроме скрытия бейджей на мобильном)
+### Shared hook: `useDocuments.ts`
+
+Вынос `fetchAction`, загрузки документов и фильтров из DirectorDashboard в переиспользуемый hook:
+
+- `useDocuments()` возвращает `{ docs, filterOptions, loading }`
+- Используется в DirectorDashboard и RolePage
+- Вся логика фетчинга остается без изменений
+
+In useDocuments.ts: export only { docs, filterOptions, 
+
+loading, chipCounts }.
+
+Do NOT move activeFilters, filteredDocs, toggleFilter 
+
+into the hook — keep them in each page component.
+
+activeFilters state must remain Record<string, Set<string>>
+
+RolePage: on mount, find role id from filterOptions.roles 
+
+where name === roleName param, then set it as active 
+
+filter automatically.
+
+&nbsp;
+
+### Что НЕ меняется:
+
+- Edge function `bpium-api/index.ts`
+- Логика фильтрации (AND между группами)
+- Статус-маппинг (STATUS_MAP)
+- Пароль директора
+- Страница выбора роли (Index.tsx)
