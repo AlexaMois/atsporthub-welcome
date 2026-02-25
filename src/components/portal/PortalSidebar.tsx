@@ -24,7 +24,7 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
 };
 
 export function PortalSidebar() {
-  const { filterOptions, activeFilters, toggleFilter, clearFilters, chipCounts } = usePortal();
+  const { filterOptions, activeFilters, setExclusiveFilter, clearFilters, chipCounts } = usePortal();
   const navigate = useNavigate();
   const location = useLocation();
   const isDocListPage = location.pathname === "/dashboard/director";
@@ -43,7 +43,7 @@ export function PortalSidebar() {
   };
 
   const handleItemClick = (group: string, itemId: string) => {
-    toggleFilter(group, itemId);
+    setExclusiveFilter(group, itemId);
     if (!isDocListPage) navigate("/dashboard/director");
   };
 
