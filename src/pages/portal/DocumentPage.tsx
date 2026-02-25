@@ -19,6 +19,43 @@ const sanitizeFilename = (name: string): string => {
     .replace(/^\.+/, "_") || "document";
 };
 
+const getExtensionFromUrl = (url: string): string => {
+  const match = url.match(/\.([a-zA-Z0-9]{1,5})(?:\?|$)/);
+  return match ? `.${match[1].toLowerCase()}` : "";
+};
+
+const buildDownloadFilename = (title: string | undefined, docId: string | undefined, url: string): string => {
+  let base = "";
+  if (title && typeof title === "string" && title.trim().length > 0) {
+    base = title.trim();
+  } else if (docId) {
+    base = `document_${docId}`;
+  } else {
+    base = "document";
+  }
+  const ext = getExtensionFromUrl(url);
+  if (ext && !base.toLowerCase().endsWith(ext)) {
+    base += ext;
+  }
+  return sanitizeFilename(base);
+};
+
+const handleDownload = async (url: string, title?: string, docId?: string) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = buildDownloadFilename(title, docId, url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 100);
+  } catch {
+    window.open(url, "_blank");
+  }
+};
+
 const getViewUrl = (url: string): string => {
   const lower = url.toLowerCase();
   if (lower.match(/\.(docx?|xlsx?|pptx?)(\?|$)/)) {
@@ -29,22 +66,6 @@ const getViewUrl = (url: string): string => {
 
 const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
-
-const handleDownload = async (url: string, filename?: string) => {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = sanitizeFilename(filename || url.split("/").pop() || "document");
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 100);
-  } catch {
-    window.open(url, "_blank");
-  }
-};
 
 const DocumentPage = () => {
   const { docId } = useParams<{ docId: string }>();
@@ -133,7 +154,7 @@ const DocumentPage = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleDownload(fileUrl, doc.title)}
+              onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
               className="gap-2"
             >
               <Download className="w-4 h-4" /> Скачать
