@@ -1,71 +1,41 @@
+# Welcome Banner in PortalLayout
 
+## What
 
-# Исправление имени скачиваемого файла
+Add a dismissible welcome banner between the header and the Outlet that shows once per session.
 
-## Диагноз
+## Changes
 
-Две проблемы мешают работе:
+**File: `src/components/portal/PortalLayout.tsx**`
 
-### 1. Published-сайт не обновлён
-Изменения с `buildDownloadFilename` уже есть в preview-коде, но published-версия (atsporthub-welcome.lovable.app) по-прежнему содержит старый код. Нужна публикация.
+1. Add `useState` to the React import.
+2. Initialize banner visibility: `useState(() => sessionStorage.getItem("welcome_shown") !== "true")`.
+3. On mount (when banner is visible), set `sessionStorage.setItem("welcome_shown", "true")`.
+4. Insert banner JSX between `</header>` and `<div className="flex-1 overflow-auto">`, showing greeting with today's date in Russian locale and a dismiss button.
 
-### 2. CORS fallback теряет имя файла
-Файлы хранятся на внешнем домене (`hombyvzvkdqwjwjnxdlx.supabase.co`). Если `fetch()` завершается ошибкой CORS, срабатывает `catch`, который вызывает `window.open(url, "_blank")` -- и браузер использует техническое имя из URL (`1770981518740-fqseqjex.docx`).
+No other components (sidebar, header, Outlet, logout) are touched.
 
-Даже если fetch проходит успешно, некоторые браузеры могут игнорировать `a.download` для blob из cross-origin ресурсов.
+## Technical Detail
 
-## Что нужно сделать
-
-### Шаг 1: Усилить catch-ветку в handleDownload (2 файла)
-
-**Файлы:**
-- `src/pages/portal/DocumentPage.tsx`
-- `src/pages/portal/DocumentListPage.tsx`
-
-**Изменения в handleDownload:**
-
-В `catch`-ветке вместо `window.open(url, "_blank")` создавать `<a>` с `download`-атрибутом и прямой ссылкой. Это даст браузеру подсказку об имени файла даже при прямом переходе:
-
-```typescript
-const handleDownload = async (url: string, title?: string, docId?: string) => {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("fetch failed");
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = buildDownloadFilename(title, docId, url);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 100);
-  } catch {
-    // Fallback: direct link with download hint
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = buildDownloadFilename(title, docId, url);
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-};
+```text
+PortalLayout
+  <SidebarInset>
+    <header> ... </header>        <-- untouched
+    {showWelcome && <WelcomeBanner />}  <-- NEW
+    <div className="flex-1 overflow-auto">
+      <Outlet />                  <-- untouched
+    </div>
+  </SidebarInset>
 ```
 
-Ключевое отличие: в `catch` мы теперь тоже используем `<a download="...">` вместо `window.open()`. Для cross-origin ссылок браузер может проигнорировать `download`, но это лучше, чем `window.open` без подсказки вообще.
+- `showWelcome` state initializes from `sessionStorage` (false if already shown).
+- On first render when visible, `sessionStorage.setItem("welcome_shown","true")` is called via `useEffect`.
+- Dismiss button sets `showWelcome` to false (hides for current view; next session reload won't show again because sessionStorage is already set).
 
-### Шаг 2: Добавить проверку res.ok
+In src/components/portal/PortalLayout.tsx, 
 
-В try-ветке добавить `if (!res.ok) throw new Error(...)` чтобы HTTP-ошибки (403, 404) тоже попадали в fallback.
+in the welcome banner text change greeting to:
 
-### Шаг 3: Опубликовать
+"Добрый день, Максим Игоревич!"
 
-После правок опубликовать текущую версию, чтобы изменения появились на atsporthub-welcome.lovable.app.
-
-## Технические детали
-
-- Затрагиваемые файлы: 2 (DocumentPage.tsx, DocumentListPage.tsx)
-- Объём изменений: замена catch-ветки + добавление res.ok проверки в каждом файле
-- Не затрагиваются: PortalSidebar.tsx, portal-context.tsx, bpium-api edge function
-- `buildDownloadFilename`, `sanitizeFilename`, `getExtensionFromUrl` уже на месте -- их менять не нужно
-
+&nbsp;
