@@ -14,6 +14,20 @@ interface LinkedObj {
   recordTitle: string;
 }
 
+const handleDownload = async (url: string, filename?: string) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename || url.split("/").pop() || "document";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, "_blank");
+  }
+};
+
 const DocumentListPage = () => {
   const {
     loading, filteredDocs, stats, searchQuery, setSearchQuery,
@@ -115,8 +129,8 @@ const DocumentListPage = () => {
                     {st && <Badge className={`${st.className} border-0 text-xs`}>{st.label}</Badge>}
                     {url && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); window.open(url, "_blank"); }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-[#0099ff] p-1"
+                        onClick={(e) => { e.stopPropagation(); handleDownload(url, doc.title); }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
                       >
                         <Download className="w-4 h-4" />
                       </button>
