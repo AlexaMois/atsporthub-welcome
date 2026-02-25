@@ -1,99 +1,71 @@
 
-# Доработка: читаемое имя скачиваемого файла + план мобильной проверки
 
-## Что подтверждено по коду сейчас
+# Исправление имени скачиваемого файла
 
-- `PortalSidebar` уже использует `setExclusiveFilter` (один выбор внутри группы, при этом группы комбинируются через AND).
-- `DocumentPage` уже содержит встроенный iframe-предпросмотр через `getViewUrl(fileUrl)`.
-- Базовый `fetch/blob`-скачиватель уже есть в обеих страницах и уже использует `appendChild/removeChild` + отложенный `revokeObjectURL`.
+## Диагноз
 
-Оставшийся реальный дефект — **имя скачиваемого файла** иногда уходит в системное (`1770...docx`), то есть текущий `filename` не всегда надежно формируется.
+Две проблемы мешают работе:
 
----
+### 1. Published-сайт не обновлён
+Изменения с `buildDownloadFilename` уже есть в preview-коде, но published-версия (atsporthub-welcome.lovable.app) по-прежнему содержит старый код. Нужна публикация.
 
-## Почему это происходит
+### 2. CORS fallback теряет имя файла
+Файлы хранятся на внешнем домене (`hombyvzvkdqwjwjnxdlx.supabase.co`). Если `fetch()` завершается ошибкой CORS, срабатывает `catch`, который вызывает `window.open(url, "_blank")` -- и браузер использует техническое имя из URL (`1770981518740-fqseqjex.docx`).
 
-Текущая логика имени:
-- берет `filename` (обычно `doc.title`),
-- иначе берет имя из URL (`url.split("/").pop()`).
-
-Если `doc.title` пустой/нестроковый/невалидный для конкретной записи, включается fallback из URL — и получается техническое имя файла из storage.
-
----
+Даже если fetch проходит успешно, некоторые браузеры могут игнорировать `a.download` для blob из cross-origin ресурсов.
 
 ## Что нужно сделать
 
-## 1) Сделать надежный генератор имени файла (единый для обеих страниц)
+### Шаг 1: Усилить catch-ветку в handleDownload (2 файла)
 
 **Файлы:**
 - `src/pages/portal/DocumentPage.tsx`
 - `src/pages/portal/DocumentListPage.tsx`
 
-**Изменения:**
-- Добавить helper-функцию вида `buildDownloadFilename(...)`, которая:
-  1. Берет кандидат имени из `doc.title` (только если это непустая строка).
-  2. Если пусто — пытается взять человекочитаемое имя из URL path (decodeURIComponent).
-  3. Если и это непригодно — использует `"document"`.
-  4. Всегда прогоняет через `sanitizeFilename`.
-  5. Гарантирует расширение (берет из URL, например `.pdf/.docx`, и добавляет, если в заголовке его нет).
+**Изменения в handleDownload:**
 
-Это убирает зависимость от случайного storage-имени и стабилизирует результат.
+В `catch`-ветке вместо `window.open(url, "_blank")` создавать `<a>` с `download`-атрибутом и прямой ссылкой. Это даст браузеру подсказку об имени файла даже при прямом переходе:
 
----
+```typescript
+const handleDownload = async (url: string, title?: string, docId?: string) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("fetch failed");
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = buildDownloadFilename(title, docId, url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 100);
+  } catch {
+    // Fallback: direct link with download hint
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = buildDownloadFilename(title, docId, url);
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
+```
 
-## 2) Передавать в `handleDownload` не только title, но и ID/резервный label
+Ключевое отличие: в `catch` мы теперь тоже используем `<a download="...">` вместо `window.open()`. Для cross-origin ссылок браузер может проигнорировать `download`, но это лучше, чем `window.open` без подсказки вообще.
 
-**Файлы те же.**
+### Шаг 2: Добавить проверку res.ok
 
-**Изменения:**
-- Вызов скачивания менять так, чтобы был гарантированный fallback:
-  - приоритет: `doc.title`
-  - резерв: `document_${doc.id}`
-- Внутри `handleDownload` использовать новый `buildDownloadFilename`.
+В try-ветке добавить `if (!res.ok) throw new Error(...)` чтобы HTTP-ошибки (403, 404) тоже попадали в fallback.
 
----
+### Шаг 3: Опубликовать
 
-## 3) Оставить текущую кроссбраузерную механику скачивания (она правильная)
+После правок опубликовать текущую версию, чтобы изменения появились на atsporthub-welcome.lovable.app.
 
-Сохраняем как есть:
-- `document.body.appendChild(a)`
-- `a.click()`
-- `document.body.removeChild(a)`
-- `setTimeout(() => URL.revokeObjectURL(...), 100)`
+## Технические детали
 
----
+- Затрагиваемые файлы: 2 (DocumentPage.tsx, DocumentListPage.tsx)
+- Объём изменений: замена catch-ветки + добавление res.ok проверки в каждом файле
+- Не затрагиваются: PortalSidebar.tsx, portal-context.tsx, bpium-api edge function
+- `buildDownloadFilename`, `sanitizeFilename`, `getExtensionFromUrl` уже на месте -- их менять не нужно
 
-## 4) Мобильная проверка (ручной QA-чеклист на реальном устройстве)
-
-Так как в текущей среде нет полноценной проверки iOS Safari/Android Chrome, после правки пройти вручную:
-
-1. Открыть `/dashboard/director` на телефоне (iOS Safari + Android Chrome).
-2. Проверить:
-   - скрытие/открытие sidebar (гамбургер),
-   - клики по фильтрам,
-   - отображение бейджей,
-   - скролл списка документов.
-3. Открыть документ:
-   - прокрутка страницы с iframe,
-   - открытие PDF/Office предпросмотра,
-   - нажатие «Скачать».
-4. Проверить фактическое имя в загрузках:
-   - должно быть по названию документа (или `document_<id>` fallback), не storage-id.
-5. Повторить для минимум 1 PDF и 1 DOCX.
-
----
-
-## Технический порядок внедрения
-
-1. `DocumentPage.tsx`: добавить `buildDownloadFilename`, обновить `handleDownload`, обновить вызов кнопки `Скачать`.
-2. `DocumentListPage.tsx`: синхронно добавить ту же логику и обновить вызов у иконки скачивания.
-3. Локальный проход сценариев: list download + details download.
-4. Ручной mobile QA на реальном устройстве по чеклисту выше.
-
----
-
-## Ожидаемый результат
-
-- Имя скачиваемого файла становится человекочитаемым и предсказуемым.
-- Системные имена (`1770...`) используются только как крайний fallback и не видны пользователю в обычном сценарии.
-- Мобильная работоспособность подтверждается отдельным ручным прогоном.
