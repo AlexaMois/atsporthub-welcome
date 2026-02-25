@@ -17,11 +17,12 @@ function PortalHeader({ onLogout }: { onLogout: () => void }) {
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20 h-9 w-9"
+          size="sm"
+          className="text-white hover:bg-white/20 bg-white/15 rounded-lg gap-1.5 h-9 px-3"
           onClick={toggleSidebar}
         >
           <Menu className="h-5 w-5" />
+          <span className="text-sm font-medium md:hidden">Меню</span>
         </Button>
         <span className="text-white font-semibold text-sm">АТС Портал</span>
       </div>
