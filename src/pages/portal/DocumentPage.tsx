@@ -1,5 +1,5 @@
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Download } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, ExternalLink, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,7 +76,12 @@ const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(u
 
 const DocumentPage = () => {
   const { docId } = useParams<{ docId: string }>();
+  const navigate = useNavigate();
   const { docs, loading } = usePortal();
+
+  const currentIndex = docs.findIndex((d) => String(d.id) === docId);
+  const prevDoc = currentIndex > 0 ? docs[currentIndex - 1] : null;
+  const nextDoc = currentIndex >= 0 && currentIndex < docs.length - 1 ? docs[currentIndex + 1] : null;
 
   if (loading) {
     return (
@@ -161,6 +166,28 @@ const DocumentPage = () => {
       ) : (
         <p className="text-gray-400 text-center py-8">Файл не прикреплён</p>
       )}
+
+      {/* Prev / Next navigation */}
+      <div className="flex justify-between mt-8">
+        {prevDoc ? (
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/dashboard/director/doc/${prevDoc.id}`)}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Предыдущий
+          </Button>
+        ) : <div />}
+        {nextDoc ? (
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/dashboard/director/doc/${nextDoc.id}`)}
+            className="gap-2"
+          >
+            Следующий <ArrowRight className="w-4 h-4" />
+          </Button>
+        ) : <div />}
+      </div>
     </div>
   );
 };
