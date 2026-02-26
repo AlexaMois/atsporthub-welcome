@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 const Index = lazy(() => import("./pages/Index"));
-const RolePage = lazy(() => import("./pages/RolePage"));
 const PasswordPage = lazy(() => import("./pages/PasswordPage"));
 const PortalLayout = lazy(() => import("./components/portal/PortalLayout"));
 const DocumentListPage = lazy(() => import("./pages/portal/DocumentListPage"));
@@ -24,9 +23,12 @@ const App = () => (
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/role/:roleName" element={<RolePage />} />
             <Route path="/login/director" element={<PasswordPage />} />
             <Route path="/dashboard/director" element={<PortalLayout />}>
+              <Route index element={<DocumentListPage />} />
+              <Route path="doc/:docId" element={<DocumentPage />} />
+            </Route>
+            <Route path="/role/:roleName" element={<PortalLayout />}>
               <Route index element={<DocumentListPage />} />
               <Route path="doc/:docId" element={<DocumentPage />} />
             </Route>

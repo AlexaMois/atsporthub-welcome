@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
@@ -12,7 +12,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-function PortalHeader({ onLogout }: { onLogout: () => void }) {
+function PortalHeader({ onLogout, roleName }: { onLogout: () => void; roleName?: string }) {
   const { toggleSidebar } = useSidebar();
   return (
     <header className="h-14 bg-[#0099ff] flex items-center justify-between px-4 shrink-0">
@@ -30,16 +30,31 @@ function PortalHeader({ onLogout }: { onLogout: () => void }) {
         <span className="text-white font-semibold text-sm">АТС Портал</span>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-white text-sm opacity-80 hidden md:inline">Генеральный директор</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/20 gap-1"
-          onClick={onLogout}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Выйти</span>
-        </Button>
+        {roleName ? (
+          <>
+            <span className="text-white text-sm opacity-80 hidden md:inline">{roleName}</span>
+            <Link
+              to="/"
+              className="text-white hover:bg-white/20 inline-flex items-center gap-1 text-sm px-2 py-1 rounded"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">К выбору роли</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <span className="text-white text-sm opacity-80 hidden md:inline">Генеральный директор</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 gap-1"
+              onClick={onLogout}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Выйти</span>
+            </Button>
+          </>
+        )}
       </div>
     </header>
   );
@@ -47,7 +62,9 @@ function PortalHeader({ onLogout }: { onLogout: () => void }) {
 
 export default function PortalLayout() {
   const navigate = useNavigate();
-  const [showWelcome, setShowWelcome] = useState(() => sessionStorage.getItem("welcome_shown") !== "true");
+  const { roleName } = useParams<{ roleName?: string }>();
+  const isEmployee = Boolean(roleName);
+  const [showWelcome, setShowWelcome] = useState(() => !isEmployee && sessionStorage.getItem("welcome_shown") !== "true");
 
   useEffect(() => {
     if (showWelcome) {
@@ -56,12 +73,12 @@ export default function PortalLayout() {
   }, [showWelcome]);
 
   useEffect(() => {
-    if (sessionStorage.getItem("director_auth") !== "true") {
+    if (!isEmployee && sessionStorage.getItem("director_auth") !== "true") {
       navigate("/login/director", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, isEmployee]);
 
-  if (sessionStorage.getItem("director_auth") !== "true") {
+  if (!isEmployee && sessionStorage.getItem("director_auth") !== "true") {
     return null;
   }
 
@@ -71,13 +88,13 @@ export default function PortalLayout() {
   };
 
   return (
-    <PortalProvider>
+    <PortalProvider roleName={roleName}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-[#f5f7fa]">
-          <PortalSidebar />
+          <PortalSidebar roleName={roleName} />
           <SidebarInset>
-            <PortalHeader onLogout={handleLogout} />
-            {showWelcome && (
+            <PortalHeader onLogout={handleLogout} roleName={roleName} />
+            {showWelcome && !isEmployee && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-[#0099ff] rounded-r-lg flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-[#0a1628]">Добрый день, Максим Игоревич!</p>
