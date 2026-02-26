@@ -1,45 +1,44 @@
 
-## Динамические ссылки на документы
+## Динамические ссылки в PortalBreadcrumb
 
-Два изменения для корректной навигации в режиме сотрудника.
+Одно изменение в файле `src/components/portal/PortalBreadcrumb.tsx`.
 
-### 1. DocumentListPage.tsx (строка 156)
+### Что меняется
 
-`useParams` и `roleName` уже импортированы и читаются (строка 70). Нужно только обновить ссылку:
+**Строка 14** -- расширить `useParams` и добавить `basePath`:
 
-**Строка 156** -- заменить:
-```
-to={`/dashboard/director/doc/${doc.id}`}
-```
-на:
-```
-to={roleName
-  ? `/role/${encodeURIComponent(roleName)}/doc/${doc.id}`
-  : `/dashboard/director/doc/${doc.id}`
-}
-```
+```tsx
+// Было:
+const { docId } = useParams<{ docId: string }>();
+const { docs } = usePortal();
 
-### 2. DocumentPage.tsx (строки 80, 207, 217)
+const isDocPage = !!docId && location.pathname.includes("/doc/");
 
-**Строка 80** -- добавить `roleName` в деструктуризацию useParams:
-```
-const { docId, roleName } = useParams<{ docId: string; roleName?: string }>();
-```
+// Стало:
+const { docId, roleName } = useParams<{ docId?: string; roleName?: string }>();
+const { docs } = usePortal();
 
-**Строка 207** -- заменить navigate для prevDoc:
-```
-navigate(roleName
-  ? `/role/${encodeURIComponent(roleName)}/doc/${prevDoc.id}`
-  : `/dashboard/director/doc/${prevDoc.id}`
-)
+const basePath = roleName
+  ? `/role/${encodeURIComponent(roleName)}`
+  : `/dashboard/director`;
+
+const isDocPage = !!docId && location.pathname.includes("/doc/");
 ```
 
-**Строка 217** -- аналогично для nextDoc:
+**Строка 29** -- ссылка «Главная»:
+```tsx
+// Было:
+<Link to="/dashboard/director">Главная</Link>
+// Стало:
+<Link to={basePath}>Главная</Link>
 ```
-navigate(roleName
-  ? `/role/${encodeURIComponent(roleName)}/doc/${nextDoc.id}`
-  : `/dashboard/director/doc/${nextDoc.id}`
-)
+
+**Строка 39** -- ссылка «Все документы»:
+```tsx
+// Было:
+<Link to="/dashboard/director">Все документы</Link>
+// Стало:
+<Link to={basePath}>Все документы</Link>
 ```
 
 Больше ничего не меняется.
