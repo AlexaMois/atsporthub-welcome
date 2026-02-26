@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Loader2, Download, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -67,6 +67,7 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
 };
 
 const DocumentListPage = () => {
+  const { roleName } = useParams<{ roleName?: string }>();
   const {
     loading, filteredDocs, stats, searchQuery, setSearchQuery,
     activeFilters, toggleFilter, filterOptions,
@@ -98,15 +99,19 @@ const DocumentListPage = () => {
         </div>
       ) : (
         <>
-          <h1 className="text-3xl font-bold text-foreground mb-6">Все документы</h1>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {stats.map((s) => (
-              <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
-                <div className="text-xl sm:text-2xl font-bold text-[#0a1628]">{s.value}</div>
-                <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-6">
+            {roleName ? "Документы для вас" : "Все документы"}
+          </h1>
+          {!roleName && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {stats.map((s) => (
+                <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
+                  <div className="text-xl sm:text-2xl font-bold text-[#0a1628]">{s.value}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Search */}
           <div className="relative mb-4">
