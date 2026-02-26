@@ -88,10 +88,10 @@ export function PortalSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
+                <SidebarMenuButton
                 onClick={handleAllDocs}
                 isActive={isDocListPage && noFiltersActive}
-                className="gap-2"
+                className="gap-2 data-[active=true]:border-l-[3px] data-[active=true]:border-l-[#0099ff] data-[active=true]:text-[#0099ff] data-[active=true]:rounded-l-none data-[active=true]:pl-[calc(0.5rem-3px)]"
               >
                 <FileText className="h-4 w-4" />
                 <span>Все документы</span>
@@ -136,7 +136,7 @@ export function PortalSidebar() {
                               onClick={() => handleItemClick(g.key, item.id)}
                               isActive={active}
                               size="sm"
-                              className="justify-between"
+                              className="justify-between data-[active=true]:border-l-[3px] data-[active=true]:border-l-[#0099ff] data-[active=true]:text-[#0099ff] data-[active=true]:rounded-l-none data-[active=true]:pl-[calc(0.5rem-3px)]"
                             >
                               <span className="flex items-center gap-1.5 truncate">
                                 <ItemIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
