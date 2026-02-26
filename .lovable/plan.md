@@ -1,42 +1,45 @@
 
+## Динамические ссылки на документы
 
-## Переиспользование портала директора для ролей сотрудников
+Два изменения для корректной навигации в режиме сотрудника.
 
-### Обзор
+### 1. DocumentListPage.tsx (строка 156)
 
-Портал директора (`PortalLayout` + `DocumentListPage` + `DocumentPage`) будет переиспользован для экранов сотрудников `/role/:roleName`. Минимум изменений: 4 файла, 0 новых файлов.
+`useParams` и `roleName` уже импортированы и читаются (строка 70). Нужно только обновить ссылку:
 
-### Изменения по файлам
-
-#### 1. src/App.tsx
-- Удалить старый маршрут `<Route path="/role/:roleName" element={<RolePage />} />`
-- Добавить новый вложенный маршрут:
+**Строка 156** -- заменить:
 ```
-<Route path="/role/:roleName" element={<PortalLayout />}>
-  <Route index element={<DocumentListPage />} />
-  <Route path="doc/:docId" element={<DocumentPage />} />
-</Route>
+to={`/dashboard/director/doc/${doc.id}`}
+```
+на:
+```
+to={roleName
+  ? `/role/${encodeURIComponent(roleName)}/doc/${doc.id}`
+  : `/dashboard/director/doc/${doc.id}`
+}
 ```
 
-#### 2. src/components/portal/PortalLayout.tsx
-- Импортировать `useParams` и `Link` из react-router-dom
-- Читать `roleName` из `useParams()`
-- **Авторизация**: проверку `director_auth` выполнять только если `roleName` отсутствует (т.е. маршрут директора). Для `/role/:roleName` -- пропускать без пароля
-- **Шапка**: передать `roleName` в `PortalHeader`. Если `roleName` есть -- вместо "Генеральный директор" + кнопки "Выйти" показать декодированное имя роли и ссылку "К выбору роли" на `/`
-- **Приветствие**: скрыть блок welcome для сотрудников (только для директора)
+### 2. DocumentPage.tsx (строки 80, 207, 217)
 
-#### 3. src/lib/portal-context.tsx
-- `PortalProvider` принимает необязательный проп `roleName?: string`
-- После загрузки `filterOptions` (в useEffect): если `roleName` задан, найти в `filterOptions.roles` элемент с `name` совпадающим с `roleName` (декодированным) и вызвать `setExclusiveFilter("roles", id)`
-- Добавить отдельный `useEffect` зависящий от `filterOptions` и `roleName`
+**Строка 80** -- добавить `roleName` в деструктуризацию useParams:
+```
+const { docId, roleName } = useParams<{ docId: string; roleName?: string }>();
+```
 
-#### 4. src/components/portal/PortalSidebar.tsx
-- Принимать проп `roleName?: string` или читать из useParams
-- Если `roleName` задан -- скрыть группу фильтров "По ролям" (`key === "roles"`) из списка `FILTER_GROUPS`
-- Остальные группы (проекты, направления, источники) и кнопка "Спросить ИИ" остаются
+**Строка 207** -- заменить navigate для prevDoc:
+```
+navigate(roleName
+  ? `/role/${encodeURIComponent(roleName)}/doc/${prevDoc.id}`
+  : `/dashboard/director/doc/${prevDoc.id}`
+)
+```
 
-### Технические детали
+**Строка 217** -- аналогично для nextDoc:
+```
+navigate(roleName
+  ? `/role/${encodeURIComponent(roleName)}/doc/${nextDoc.id}`
+  : `/dashboard/director/doc/${nextDoc.id}`
+)
+```
 
-- `roleName` из URL приходит закодированным (например `%D0%92%D0%BE%D0%B4%D0%B8%D1%82%D0%B5%D0%BB%D1%8C`), react-router декодирует автоматически через `useParams()`
-- Передача `roleName` в `PortalProvider` через проп из `PortalLayout`, а не через `useParams` внутри контекста (контекст не находится внутри Route, поэтому useParams там не сработает)
-- `RolePage.tsx` остается в проекте, просто не используется в маршрутах
+Больше ничего не меняется.
