@@ -1,4 +1,4 @@
-import { FileText, FolderOpen, Compass, Users, BookOpen } from "lucide-react";
+import { FileText, FolderOpen, Compass, Users, BookOpen, Sparkles } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { usePortal, FILTER_GROUPS } from "@/lib/portal-context";
 import {
@@ -119,6 +119,12 @@ export function PortalSidebar() {
             </Collapsible>
           );
         })}
+        <div className="px-3 py-4 mt-auto border-t border-gray-100">
+          <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#0099ff]/10 hover:bg-[#0099ff]/20 transition-colors text-sm font-medium text-[#0099ff]">
+            <Sparkles className="h-4 w-4" />
+            Спросить ИИ
+          </button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
