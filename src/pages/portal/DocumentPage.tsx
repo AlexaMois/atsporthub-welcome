@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ExternalLink, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +80,7 @@ const DocumentPage = () => {
   const { docId } = useParams<{ docId: string }>();
   const navigate = useNavigate();
   const { docs, loading } = usePortal();
+  const [showPreview, setShowPreview] = useState(false);
 
   const currentIndex = docs.findIndex((d) => String(d.id) === docId);
   const prevDoc = currentIndex > 0 ? docs[currentIndex - 1] : null;
@@ -138,11 +140,31 @@ const DocumentPage = () => {
       {fileUrl ? (
         <>
           {(isPdf(fileUrl) || isOffice(fileUrl)) ? (
-            <iframe
-              src={getViewUrl(fileUrl)}
-              className="w-full h-[350px] sm:h-[600px] rounded-lg border border-gray-200 mb-6"
-              title="Предпросмотр документа"
-            />
+            <>
+              <div className="sm:hidden mb-6">
+                {!showPreview ? (
+                  <button
+                    onClick={() => setShowPreview(true)}
+                    className="w-full py-4 border-2 border-dashed border-border rounded-lg text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Загрузить предпросмотр документа
+                  </button>
+                ) : (
+                  <iframe
+                    src={getViewUrl(fileUrl)}
+                    className="w-full h-[350px] rounded-lg border border-gray-200"
+                    title="Предпросмотр документа"
+                  />
+                )}
+              </div>
+              <div className="hidden sm:block mb-6">
+                <iframe
+                  src={getViewUrl(fileUrl)}
+                  className="w-full h-[600px] rounded-lg border border-gray-200"
+                  title="Предпросмотр документа"
+                />
+              </div>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground mb-6">
               Предпросмотр недоступен для этого типа файла.
