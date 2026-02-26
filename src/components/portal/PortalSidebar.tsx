@@ -12,10 +12,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ITEM_ICON_MAP: [string, LucideIcon][] = [
   ["водитель", Truck],
@@ -56,6 +58,8 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
 
 export function PortalSidebar() {
   const { filterOptions, activeFilters, setExclusiveFilter, clearFilters, chipCounts } = usePortal();
+  const { setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const isDocListPage = location.pathname === "/dashboard/director";
@@ -71,11 +75,13 @@ export function PortalSidebar() {
   const handleAllDocs = () => {
     clearFilters();
     if (!isDocListPage) navigate("/dashboard/director");
+    if (isMobile) setOpenMobile(false);
   };
 
   const handleItemClick = (group: string, itemId: string) => {
     setExclusiveFilter(group, itemId);
     if (!isDocListPage) navigate("/dashboard/director");
+    if (isMobile) setOpenMobile(false);
   };
 
   return (
