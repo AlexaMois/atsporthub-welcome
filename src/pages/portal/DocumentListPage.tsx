@@ -153,7 +153,10 @@ const DocumentListPage = () => {
               return (
                 <div key={doc.id} className="py-4 border-b border-gray-100 hover:bg-gray-50 group relative flex items-start justify-between gap-2">
                   <Link
-                    to={`/dashboard/director/doc/${doc.id}`}
+                    to={roleName
+                      ? `/role/${encodeURIComponent(roleName)}/doc/${doc.id}`
+                      : `/dashboard/director/doc/${doc.id}`
+                    }
                     className="flex-1 min-w-0"
                   >
                     <p className="text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff] line-clamp-2 transition-colors">
