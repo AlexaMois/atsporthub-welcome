@@ -1,26 +1,52 @@
 
-## Проверка и исправление кнопок в DocumentPage.tsx
 
-### Результат проверки
+## Добавление логотипа АТС
 
-**onClick-обработчики** -- все корректны:
-- "Предыдущий" и "Следующий" -- только `navigate()`, побочных действий нет
-- "Открыть файл" -- `window.open()`, корректно
-- "Скачать" -- `handleDownload()`, корректно
-- "Загрузить предпросмотр" -- `setShowPreview(true)`, корректно
+Логотип (геометрический лев) будет использован в трёх местах: favicon, шапка портала директора и экран выбора ролей.
 
-**Проблема: ни одна кнопка не имеет `type="button"`**
+### 1. Копирование файла
 
-Без явного `type="button"` браузер по умолчанию считает кнопку `type="submit"`, что может вызвать нежелательную отправку формы если кнопка окажется внутри `<form>`.
+Скопировать `user-uploads://photo_2025-12-06_08-10-16.jpg` в два места:
+- `public/favicon.jpg` -- для favicon
+- `src/assets/ats-logo.jpg` -- для использования в React-компонентах через import
 
-### Исправления
+### 2. Favicon (index.html)
 
-5 кнопок, каждой добавить `type="button"`:
+- Добавить `<link rel="icon" href="/favicon.jpg" type="image/jpeg">`
+- Обновить `<title>` на "АТС Портал"
+- Обновить og:title и twitter:title на "АТС Портал"
 
-1. **Строка 146** -- `<button onClick={() => setShowPreview(true)}` -- добавить `type="button"`
-2. **Строка 174** -- `<Button onClick={() => window.open(...)}` (Открыть файл) -- добавить `type="button"`
-3. **Строка 180** -- `<Button variant="outline" onClick={() => handleDownload(...)}` (Скачать) -- добавить `type="button"`
-4. **Строка 201** -- `<Button variant="outline" onClick={() => navigate(...)}` (Предыдущий) -- добавить `type="button"`
-5. **Строка 210** -- `<Button variant="outline" onClick={() => navigate(...)}` (Следующий) -- добавить `type="button"`
+### 3. Шапка портала (PortalLayout.tsx)
 
-Никаких других изменений не требуется.
+В компоненте `PortalHeader` рядом с текстом "АТС Портал" (строка 28) добавить логотип:
+
+```tsx
+import atsLogo from "@/assets/ats-logo.jpg";
+
+// В header, перед текстом "АТС Портал":
+<img src={atsLogo} alt="АТС" className="h-8 w-8 rounded" />
+<span className="text-white font-semibold text-sm">АТС Портал</span>
+```
+
+### 4. Экран выбора ролей (Index.tsx)
+
+В header главной страницы (строка 36-38) аналогично добавить логотип:
+
+```tsx
+import atsLogo from "@/assets/ats-logo.jpg";
+
+<header className="h-14 bg-primary flex items-center px-5 gap-3">
+  <img src={atsLogo} alt="АТС" className="h-8 w-8 rounded" />
+  <span className="text-primary-foreground font-semibold text-lg">АТС Портал</span>
+</header>
+```
+
+### Итого изменения
+
+| Файл | Что меняется |
+|---|---|
+| `public/favicon.jpg` | Новый файл (копия логотипа) |
+| `src/assets/ats-logo.jpg` | Новый файл (копия логотипа) |
+| `index.html` | Favicon + title |
+| `src/components/portal/PortalLayout.tsx` | Логотип в шапке |
+| `src/pages/Index.tsx` | Логотип в шапке |
