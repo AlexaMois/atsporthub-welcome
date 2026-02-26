@@ -158,7 +158,7 @@ const DocumentPage = () => {
             <Button
               variant="outline"
               onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
-              className="gap-2"
+              className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-primary hover:text-white"
             >
               <Download className="w-4 h-4" /> Скачать
             </Button>
@@ -179,7 +179,7 @@ const DocumentPage = () => {
           <Button
             variant="outline"
             onClick={() => navigate(`/dashboard/director/doc/${prevDoc.id}`)}
-            className="gap-2"
+            className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-accent hover:text-accent-foreground"
           >
             <ArrowLeft className="w-4 h-4" /> Предыдущий
           </Button>
@@ -188,7 +188,7 @@ const DocumentPage = () => {
           <Button
             variant="outline"
             onClick={() => navigate(`/dashboard/director/doc/${nextDoc.id}`)}
-            className="gap-2"
+            className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-accent hover:text-accent-foreground"
           >
             Следующий <ArrowRight className="w-4 h-4" />
           </Button>
