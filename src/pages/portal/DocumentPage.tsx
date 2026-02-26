@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ExternalLink, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
   usePortal,
@@ -166,6 +167,11 @@ const DocumentPage = () => {
       ) : (
         <p className="text-gray-400 text-center py-8">Файл не прикреплён</p>
       )}
+
+      <Separator className="my-8" />
+      <div className="text-xs text-muted-foreground mb-4">
+        Последнее обновление: {formatDate(doc.date)}
+      </div>
 
       {/* Prev / Next navigation */}
       <div className="flex justify-between mt-8">
