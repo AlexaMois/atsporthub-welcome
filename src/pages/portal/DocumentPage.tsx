@@ -140,7 +140,7 @@ const DocumentPage = () => {
           {(isPdf(fileUrl) || isOffice(fileUrl)) ? (
             <iframe
               src={getViewUrl(fileUrl)}
-              className="w-full h-[600px] rounded-lg border border-gray-200 mb-6"
+              className="w-full h-[350px] sm:h-[600px] rounded-lg border border-gray-200 mb-6"
               title="Предпросмотр документа"
             />
           ) : (
@@ -148,17 +148,17 @@ const DocumentPage = () => {
               Предпросмотр недоступен для этого типа файла.
             </p>
           )}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               onClick={() => window.open(getViewUrl(fileUrl), "_blank")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
               <ExternalLink className="w-4 h-4" /> Открыть файл
             </Button>
             <Button
               variant="outline"
               onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
-              className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-primary hover:text-white"
+              className="w-full sm:w-auto gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-primary hover:text-white"
             >
               <Download className="w-4 h-4" /> Скачать
             </Button>

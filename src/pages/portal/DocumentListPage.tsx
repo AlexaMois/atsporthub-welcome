@@ -101,8 +101,8 @@ const DocumentListPage = () => {
           <h1 className="text-3xl font-bold text-foreground mb-6">Все документы</h1>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((s) => (
-              <div key={s.label} className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
-                <div className="text-2xl font-bold text-[#0a1628]">{s.value}</div>
+              <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
+                <div className="text-xl sm:text-2xl font-bold text-[#0a1628]">{s.value}</div>
                 <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
               </div>
             ))}
@@ -169,7 +169,7 @@ const DocumentListPage = () => {
                     {url && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDownload(url, doc.title, String(doc.id)); }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
+                        className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
                       >
                         <Download className="w-4 h-4" />
                       </button>
