@@ -144,6 +144,7 @@ const DocumentPage = () => {
               <div className="sm:hidden mb-6">
                 {!showPreview ? (
                   <button
+                    type="button"
                     onClick={() => setShowPreview(true)}
                     className="w-full py-4 border-2 border-dashed border-border rounded-lg text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                   >
@@ -172,12 +173,14 @@ const DocumentPage = () => {
           )}
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
+              type="button"
               onClick={() => window.open(getViewUrl(fileUrl), "_blank")}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
               <ExternalLink className="w-4 h-4" /> Открыть файл
             </Button>
             <Button
+              type="button"
               variant="outline"
               onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
               className="w-full sm:w-auto gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-primary hover:text-white"
@@ -199,6 +202,7 @@ const DocumentPage = () => {
       <div className="flex justify-between mt-8">
         {prevDoc ? (
           <Button
+            type="button"
             variant="outline"
             onClick={() => navigate(`/dashboard/director/doc/${prevDoc.id}`)}
             className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-accent hover:text-accent-foreground"
@@ -208,6 +212,7 @@ const DocumentPage = () => {
         ) : <div />}
         {nextDoc ? (
           <Button
+            type="button"
             variant="outline"
             onClick={() => navigate(`/dashboard/director/doc/${nextDoc.id}`)}
             className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-accent hover:text-accent-foreground"
