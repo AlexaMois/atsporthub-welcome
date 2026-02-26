@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
 import { PortalSidebar } from "./PortalSidebar";
 import { PortalBreadcrumb } from "./PortalBreadcrumb";
+import atsLogo from "@/assets/ats-logo.jpg";
 import {
   SidebarProvider,
   SidebarInset,
@@ -25,6 +26,7 @@ function PortalHeader({ onLogout }: { onLogout: () => void }) {
           <Menu className="h-5 w-5" />
           <span className="text-sm font-medium md:hidden">Меню</span>
         </Button>
+        <img src={atsLogo} alt="АТС" className="h-8 w-8 rounded" />
         <span className="text-white font-semibold text-sm">АТС Портал</span>
       </div>
       <div className="flex items-center gap-3">

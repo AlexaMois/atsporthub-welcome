@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Car, Wrench, Radio, ClipboardCheck, ShieldCheck, HeartPulse, Cog, Zap, HardHat, Package, Briefcase, UserCheck, Users, Settings, Anchor, Crown, Lock } from "lucide-react";
+import atsLogo from "@/assets/ats-logo.jpg";
 
 const roles = [
   { name: "Водитель", icon: Car },
@@ -33,7 +34,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="h-14 bg-primary flex items-center px-5">
+      <header className="h-14 bg-primary flex items-center px-5 gap-3">
+        <img src={atsLogo} alt="АТС" className="h-8 w-8 rounded" />
         <span className="text-primary-foreground font-semibold text-lg">АТС Портал</span>
       </header>
 
