@@ -33,7 +33,7 @@ export function PortalBreadcrumb() {
             )}
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>
+          <BreadcrumbItem className={isDocPage ? "hidden sm:flex" : undefined}>
             {isDocPage ? (
               <BreadcrumbLink asChild>
                 <Link to="/dashboard/director">Все документы</Link>
@@ -46,7 +46,7 @@ export function PortalBreadcrumb() {
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{docTitle}</BreadcrumbPage>
+                <BreadcrumbPage className="truncate max-w-[200px]">{docTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
           )}
