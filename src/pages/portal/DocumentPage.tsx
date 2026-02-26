@@ -77,7 +77,7 @@ const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
 
 const DocumentPage = () => {
-  const { docId } = useParams<{ docId: string }>();
+  const { docId, roleName } = useParams<{ docId: string; roleName?: string }>();
   const navigate = useNavigate();
   const { docs, loading } = usePortal();
   const [showPreview, setShowPreview] = useState(false);
@@ -204,7 +204,10 @@ const DocumentPage = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(`/dashboard/director/doc/${prevDoc.id}`)}
+            onClick={() => navigate(roleName
+              ? `/role/${encodeURIComponent(roleName)}/doc/${prevDoc.id}`
+              : `/dashboard/director/doc/${prevDoc.id}`
+            )}
             className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-accent hover:text-accent-foreground"
           >
             <ArrowLeft className="w-4 h-4" /> Предыдущий
@@ -214,7 +217,10 @@ const DocumentPage = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(`/dashboard/director/doc/${nextDoc.id}`)}
+            onClick={() => navigate(roleName
+              ? `/role/${encodeURIComponent(roleName)}/doc/${nextDoc.id}`
+              : `/dashboard/director/doc/${nextDoc.id}`
+            )}
             className="gap-2 hover:scale-[1.03] hover:shadow-md transition-all duration-150 hover:bg-accent hover:text-accent-foreground"
           >
             Следующий <ArrowRight className="w-4 h-4" />
