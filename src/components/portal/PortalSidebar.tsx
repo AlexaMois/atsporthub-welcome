@@ -1,4 +1,5 @@
-import { FileText, FolderOpen, Compass, Users, BookOpen, Sparkles } from "lucide-react";
+import { FileText, FolderOpen, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { usePortal, FILTER_GROUPS } from "@/lib/portal-context";
 import {
@@ -15,6 +16,36 @@ import {
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+
+const ITEM_ICON_MAP: [string, LucideIcon][] = [
+  ["водитель", Truck],
+  ["механик", Wrench],
+  ["диспетчер", Radio],
+  ["бдд", Shield],
+  ["медработник", Stethoscope],
+  ["машинист", HardHat],
+  ["электромонтёр", Zap],
+  ["электромонтер", Zap],
+  ["кладовщик", Warehouse],
+  ["кадр", UserCog],
+  ["начальник", ClipboardList],
+  ["лтк", Factory],
+  ["стропальщик", Landmark],
+  ["вчнг", Droplets],
+  ["гпнз", Flame],
+  ["все сотр", Users],
+  ["рабочий", HardHat],
+];
+
+const FALLBACK_ICONS: LucideIcon[] = [Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash];
+
+function getItemIcon(name: string, index: number): LucideIcon {
+  const lower = name.toLowerCase();
+  for (const [substr, icon] of ITEM_ICON_MAP) {
+    if (lower.includes(substr)) return icon;
+  }
+  return FALLBACK_ICONS[index % FALLBACK_ICONS.length];
+}
 
 const GROUP_ICONS: Record<string, React.ElementType> = {
   projects: FolderOpen,
@@ -95,9 +126,10 @@ export function PortalSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {items.map((item) => {
+                      {items.map((item, idx) => {
                         const active = activeFilters[g.key]?.has(item.id);
                         const count = chipCounts[`${g.key}:${item.id}`] || 0;
+                        const ItemIcon = getItemIcon(item.name, idx);
                         return (
                           <SidebarMenuItem key={item.id}>
                             <SidebarMenuButton
@@ -106,7 +138,10 @@ export function PortalSidebar() {
                               size="sm"
                               className="justify-between"
                             >
-                              <span className="truncate">{item.name}</span>
+                              <span className="flex items-center gap-1.5 truncate">
+                                <ItemIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                                <span className="truncate">{item.name}</span>
+                              </span>
                               <span className="text-[10px] text-gray-400 tabular-nums">{count}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
