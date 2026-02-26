@@ -11,8 +11,12 @@ import { usePortal } from "@/lib/portal-context";
 
 export function PortalBreadcrumb() {
   const location = useLocation();
-  const { docId } = useParams<{ docId: string }>();
+  const { docId, roleName } = useParams<{ docId?: string; roleName?: string }>();
   const { docs } = usePortal();
+
+  const basePath = roleName
+    ? `/role/${encodeURIComponent(roleName)}`
+    : `/dashboard/director`;
 
   const isDocPage = !!docId && location.pathname.includes("/doc/");
   const docTitle = isDocPage
@@ -26,7 +30,7 @@ export function PortalBreadcrumb() {
           <BreadcrumbItem>
             {isDocPage ? (
               <BreadcrumbLink asChild>
-                <Link to="/dashboard/director">Главная</Link>
+                <Link to={basePath}>Главная</Link>
               </BreadcrumbLink>
             ) : (
               <BreadcrumbPage>Главная</BreadcrumbPage>
@@ -36,7 +40,7 @@ export function PortalBreadcrumb() {
           <BreadcrumbItem className={isDocPage ? "hidden sm:flex" : undefined}>
             {isDocPage ? (
               <BreadcrumbLink asChild>
-                <Link to="/dashboard/director">Все документы</Link>
+                <Link to={basePath}>Все документы</Link>
               </BreadcrumbLink>
             ) : (
               <BreadcrumbPage>Все документы</BreadcrumbPage>
