@@ -98,6 +98,7 @@ const DocumentListPage = () => {
         </div>
       ) : (
         <>
+          <h1 className="text-3xl font-bold text-foreground mb-6">Все документы</h1>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((s) => (
               <div key={s.label} className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">

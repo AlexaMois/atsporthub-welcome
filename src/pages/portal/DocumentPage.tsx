@@ -109,7 +109,7 @@ const DocumentPage = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold text-foreground mb-4">{doc.title}</h1>
+      <h1 className="text-4xl font-bold text-foreground mb-6 leading-tight">{doc.title}</h1>
 
       <div className="flex flex-wrap items-center gap-3 mb-6 text-sm text-muted-foreground">
         {st && <Badge className={`${st.className} border-0`}>{st.label}</Badge>}
