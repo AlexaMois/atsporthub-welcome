@@ -87,7 +87,7 @@ export const usePortal = () => {
   return ctx;
 };
 
-export const PortalProvider = ({ children }: { children: ReactNode }) => {
+export const PortalProvider = ({ children, roleName }: { children: ReactNode; roleName?: string }) => {
   const [loading, setLoading] = useState(true);
   const [docs, setDocs] = useState<any[]>([]);
   const [filterOptions, setFilterOptions] = useState<Record<string, FilterItem[]>>({});
@@ -128,6 +128,17 @@ export const PortalProvider = ({ children }: { children: ReactNode }) => {
     };
     load();
   }, []);
+
+  // Auto-apply role filter for employee view
+  useEffect(() => {
+    if (!roleName || !filterOptions.roles?.length) return;
+    const match = filterOptions.roles.find(
+      (r) => r.name.toLowerCase() === roleName.toLowerCase()
+    );
+    if (match) {
+      setExclusiveFilter("roles", match.id);
+    }
+  }, [filterOptions.roles, roleName]);
 
   const stats = useMemo(() => {
     const now = new Date();

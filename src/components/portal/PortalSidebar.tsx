@@ -57,7 +57,7 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
   source: BookOpen,
 };
 
-export function PortalSidebar() {
+export function PortalSidebar({ roleName }: { roleName?: string }) {
   const { filterOptions, activeFilters, setExclusiveFilter, clearFilters, chipCounts } = usePortal();
   const [aiOpen, setAiOpen] = useState(false);
   const { setOpenMobile } = useSidebar();
@@ -110,6 +110,7 @@ export function PortalSidebar() {
 
         {/* Filter groups */}
         {FILTER_GROUPS.map((g) => {
+          if (roleName && g.key === "roles") return null;
           const items = filterOptions[g.key] || [];
           if (items.length === 0) return null;
           const Icon = GROUP_ICONS[g.key] || FileText;
