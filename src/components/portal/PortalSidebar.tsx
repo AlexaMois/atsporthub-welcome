@@ -18,6 +18,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const ITEM_ICON_MAP: [string, LucideIcon][] = [
   ["водитель", Truck],
@@ -58,6 +59,7 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
 
 export function PortalSidebar() {
   const { filterOptions, activeFilters, setExclusiveFilter, clearFilters, chipCounts } = usePortal();
+  const [aiOpen, setAiOpen] = useState(false);
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -161,11 +163,33 @@ export function PortalSidebar() {
           );
         })}
         <div className="px-3 py-4 mt-auto border-t border-gray-100">
-          <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#0099ff]/10 hover:bg-[#0099ff]/20 transition-colors text-sm font-medium text-[#0099ff]">
+          <button
+            onClick={() => setAiOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#0099ff]/10 hover:bg-[#0099ff]/20 transition-colors text-sm font-medium text-[#0099ff]"
+          >
             <Sparkles className="h-4 w-4" />
             Спросить ИИ
           </button>
         </div>
+        <Sheet open={aiOpen} onOpenChange={setAiOpen}>
+          <SheetContent side={isMobile ? "bottom" : "right"}>
+            <SheetHeader>
+              <Sparkles className="h-5 w-5 text-[#0099ff]" />
+              <SheetTitle>ИИ-ассистент</SheetTitle>
+            </SheetHeader>
+            <div className="px-6 py-8 flex flex-col items-center text-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-[#0099ff]/10 flex items-center justify-center">
+                <Sparkles className="h-6 w-6 text-[#0099ff]" />
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Скоро здесь появится ИИ-ассистент
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px]">
+                Он будет знать содержание каждого документа и отвечать на вопросы по охране труда, регламентам и требованиям — без поиска по папкам.
+              </p>
+            </div>
+          </SheetContent>
+        </Sheet>
       </SidebarContent>
     </Sidebar>
   );
