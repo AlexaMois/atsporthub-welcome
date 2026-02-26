@@ -1,4 +1,4 @@
-import { FileText, FolderOpen, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame } from "lucide-react";
+import { FileText, FolderOpen, Folder, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { usePortal, FILTER_GROUPS } from "@/lib/portal-context";
@@ -129,7 +129,7 @@ export function PortalSidebar() {
                       {items.map((item, idx) => {
                         const active = activeFilters[g.key]?.has(item.id);
                         const count = chipCounts[`${g.key}:${item.id}`] || 0;
-                        const ItemIcon = getItemIcon(item.name, idx);
+                        const ItemIcon = g.key === "projects" ? Folder : getItemIcon(item.name, idx);
                         return (
                           <SidebarMenuItem key={item.id}>
                             <SidebarMenuButton
