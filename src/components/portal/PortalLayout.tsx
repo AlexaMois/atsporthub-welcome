@@ -4,6 +4,7 @@ import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
 import { PortalSidebar } from "./PortalSidebar";
+import { PortalBreadcrumb } from "./PortalBreadcrumb";
 import {
   SidebarProvider,
   SidebarInset,
@@ -95,6 +96,7 @@ export default function PortalLayout() {
                 </button>
               </div>
             )}
+            <PortalBreadcrumb />
             <div className="flex-1 overflow-auto">
               <Outlet />
             </div>

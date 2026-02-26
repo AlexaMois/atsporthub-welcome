@@ -91,9 +91,6 @@ const DocumentPage = () => {
   if (!doc) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-8">
-        <Link to="/dashboard/director" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-6">
-          <ArrowLeft className="w-4 h-4" /> Назад к списку
-        </Link>
         <p className="text-muted-foreground text-sm">Документ не найден</p>
       </div>
     );
@@ -112,13 +109,6 @@ const DocumentPage = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
-      <Link
-        to="/dashboard/director"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-8"
-      >
-        <ArrowLeft className="w-4 h-4" /> Назад к списку
-      </Link>
-
       <h1 className="text-2xl font-bold text-foreground mb-4">{doc.title}</h1>
 
       <div className="flex flex-wrap items-center gap-3 mb-6 text-sm text-muted-foreground">
