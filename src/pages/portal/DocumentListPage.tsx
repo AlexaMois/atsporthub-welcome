@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { Loader2, Download, Search, X } from "lucide-react";
+import { Loader2, Download, Search, X, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   usePortal,
@@ -69,7 +69,7 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
 const DocumentListPage = () => {
   const { roleName } = useParams<{ roleName?: string }>();
   const {
-    loading, filteredDocs, stats, searchQuery, setSearchQuery,
+    loading, error, retry, filteredDocs, stats, searchQuery, setSearchQuery,
     activeFilters, toggleFilter, filterOptions,
   } = usePortal();
 
@@ -95,7 +95,18 @@ const DocumentListPage = () => {
       {/* Stats */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0099ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <p className="text-muted-foreground text-sm">Не удалось загрузить данные</p>
+          <button
+            onClick={retry}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Повторить загрузку
+          </button>
         </div>
       ) : (
         <>
