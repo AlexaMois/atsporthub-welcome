@@ -66,6 +66,8 @@ export const FILTER_GROUPS = [
 
 interface PortalContextType {
   loading: boolean;
+  error: boolean;
+  retry: () => void;
   docs: any[];
   filterOptions: Record<string, FilterItem[]>;
   activeFilters: Record<string, Set<string>>;
@@ -89,6 +91,7 @@ export const usePortal = () => {
 
 export const PortalProvider = ({ children, roleName }: { children: ReactNode; roleName?: string }) => {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [docs, setDocs] = useState<any[]>([]);
   const [filterOptions, setFilterOptions] = useState<Record<string, FilterItem[]>>({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,35 +102,37 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
     source: new Set(),
   });
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [docsData, roles, projects, directions, sources] = await Promise.all([
-          fetchAction("get-documents"),
-          fetchAction("get-roles"),
-          fetchAction("get-projects"),
-          fetchAction("get-directions"),
-          fetchAction("get-sources"),
-        ]);
-        if (Array.isArray(docsData)) setDocs(docsData);
+  const load = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const [docsData, roles, projects, directions, sources] = await Promise.all([
+        fetchAction("get-documents"),
+        fetchAction("get-roles"),
+        fetchAction("get-projects"),
+        fetchAction("get-directions"),
+        fetchAction("get-sources"),
+      ]);
+      if (Array.isArray(docsData)) setDocs(docsData);
 
-        const toItems = (data: any[]): FilterItem[] =>
-          Array.isArray(data) ? data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })) : [];
+      const toItems = (data: any[]): FilterItem[] =>
+        Array.isArray(data) ? data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })) : [];
 
-        setFilterOptions({
-          projects: toItems(projects),
-          roles: toItems(roles),
-          directions: toItems(directions),
-          source: toItems(sources),
-        });
-      } catch (e) {
-        console.error("Failed to load data:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+      setFilterOptions({
+        projects: toItems(projects),
+        roles: toItems(roles),
+        directions: toItems(directions),
+        source: toItems(sources),
+      });
+    } catch (e) {
+      console.error("Failed to load data:", e);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
 
   // Auto-apply role filter for employee view
   useEffect(() => {
@@ -224,7 +229,7 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
 
   return (
     <PortalContext.Provider value={{
-      loading, docs, filterOptions, activeFilters, searchQuery,
+      loading, error, retry: load, docs, filterOptions, activeFilters, searchQuery,
       setSearchQuery, toggleFilter, setExclusiveFilter, clearFilters,
       chipCounts, filteredDocs, stats,
     }}>
