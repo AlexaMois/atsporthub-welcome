@@ -100,7 +100,6 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
-      console.log('Sample directions record values:', JSON.stringify(records[0]?.values));
       const directions = records.map((r: any) => ({
         id: r.id,
         name: extractName(r.values?.['2']),
@@ -118,7 +117,6 @@ Deno.serve(async (req) => {
       if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
       const records = await res.json();
 
-      console.log('Sample sources record values:', JSON.stringify(records[0]?.values));
       const sources = records.map((r: any) => ({
         id: r.id,
         name: extractName(r.values?.['2']),
