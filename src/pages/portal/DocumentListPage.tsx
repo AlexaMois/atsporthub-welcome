@@ -27,7 +27,7 @@ const getExtensionFromUrl = (url: string): string => {
   return match ? `.${match[1].toLowerCase()}` : "";
 };
 
-const buildDownloadFilename = (title: string | undefined, docId: string | undefined, url: string): string => {
+const buildFilename = (title: string | undefined, docId: string | undefined, url: string): string => {
   let base = "";
   if (title && typeof title === "string" && title.trim().length > 0) {
     base = title.trim();
@@ -186,12 +186,13 @@ const DocumentListPage = () => {
                   <div className="flex items-center gap-2 shrink-0 pt-0.5">
                     {st && <Badge className={`${st.className} border-0 text-xs`}>{st.label}</Badge>}
                     {url && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDownload(url, doc.title, String(doc.id)); }}
-                        className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
+                      <Link
+              to={roleName ? `/role/${encodeURIComponent(roleName)}/doc/${doc.id}` : `/dashboard/director/doc/${doc.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+            </Link>
                     )}
                   </div>
                 </div>
