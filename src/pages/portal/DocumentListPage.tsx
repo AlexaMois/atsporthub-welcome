@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { Loader2, Download, Search, X, RefreshCw } from "lucide-react";
+import { Loader2, Eye, Search, X, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   usePortal,
@@ -50,7 +50,7 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = buildDownloadFilename(title, docId, url);
+    a.download = buildFilename(title, docId, url);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -58,7 +58,7 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
   } catch {
     const a = document.createElement("a");
     a.href = url;
-    a.download = buildDownloadFilename(title, docId, url);
+    a.download = buildFilename(title, docId, url);
     a.target = "_blank";
     document.body.appendChild(a);
     a.click();
