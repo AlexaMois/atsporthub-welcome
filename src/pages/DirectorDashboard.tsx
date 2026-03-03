@@ -98,8 +98,8 @@ const FilterPanel = ({
                   onClick={() => toggleFilter(g.key, item.id)}
                   className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                     active
-                      ? "bg-[#0099ff] text-white border-[#0099ff]"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-[#0099ff] hover:text-[#0099ff]"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-primary hover:text-primary"
                   }`}
                 >
                   {item.name} ({chipCounts[`${g.key}:${item.id}`] || 0})
@@ -227,9 +227,9 @@ const DirectorDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="h-14 bg-[#0099ff] flex items-center justify-between px-4">
+      <header className="h-14 bg-primary flex items-center justify-between px-4">
         <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => navigate("/")}>
           <ArrowLeft className="w-4 h-4 mr-1" /> Выйти
         </Button>
@@ -246,12 +246,12 @@ const DirectorDashboard = () => {
       <div className="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
           <div className="col-span-full flex justify-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin text-[#0099ff]" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
           stats.map((s) => (
-            <div key={s.label} className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
-              <div className="text-2xl font-bold text-[#0a1628]">{s.value}</div>
+            <div key={s.label} className="bg-white rounded-lg p-4 shadow-sm border-l-4 border-primary pl-3">
+              <div className="text-2xl font-bold text-foreground">{s.value}</div>
               <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
             </div>
           ))
@@ -302,7 +302,7 @@ const DirectorDashboard = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               placeholder="Поиск по названию..."
-              className="w-full h-11 pl-9 pr-4 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#0099ff] focus:border-transparent"
+              className="w-full h-11 pl-9 pr-4 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -322,7 +322,7 @@ const DirectorDashboard = () => {
                 <div key={doc.id} className="py-4 border-b border-gray-100 hover:bg-gray-50 group relative">
                   {/* Top line */}
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff] line-clamp-2 flex-1 transition-colors">
+                    <p className="text-sm font-medium text-foreground group-hover:text-primary line-clamp-2 flex-1 transition-colors">
                       {doc.title}
                     </p>
                     <div className="flex items-center gap-2 shrink-0">
@@ -332,7 +332,7 @@ const DirectorDashboard = () => {
                       {url && (
                         <button
                           onClick={() => window.open(url, "_blank")}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-[#0099ff] p-1"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-primary p-1"
                         >
                           <Download className="w-4 h-4" />
                         </button>
