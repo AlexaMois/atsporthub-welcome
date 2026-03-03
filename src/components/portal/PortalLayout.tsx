@@ -15,7 +15,7 @@ import {
 function PortalHeader({ onLogout, roleName }: { onLogout: () => void; roleName?: string }) {
   const { toggleSidebar } = useSidebar();
   return (
-    <header className="h-14 bg-[#0099ff] flex items-center justify-between px-4 shrink-0">
+    <header className="h-14 bg-primary flex items-center justify-between px-4 shrink-0">
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -90,14 +90,14 @@ export default function PortalLayout() {
   return (
     <PortalProvider roleName={roleName}>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-[#f5f7fa]">
+        <div className="min-h-screen flex w-full bg-background">
           <PortalSidebar roleName={roleName} />
           <SidebarInset>
             <PortalHeader onLogout={handleLogout} roleName={roleName} />
             {showWelcome && !isEmployee && (
-              <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-[#0099ff] rounded-r-lg flex items-center justify-between">
+              <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-[#0a1628]">Добрый день, Максим Игоревич!</p>
+                  <p className="font-semibold text-foreground">Добрый день, Максим Игоревич!</p>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {new Date().toLocaleDateString("ru-RU", {
                       weekday: "long",

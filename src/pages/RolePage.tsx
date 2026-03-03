@@ -89,7 +89,7 @@ const RolePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="h-14 bg-primary flex items-center px-5 gap-3">
         <Link
