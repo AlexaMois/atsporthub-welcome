@@ -116,8 +116,8 @@ const DocumentListPage = () => {
           {!roleName && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {stats.map((s) => (
-                <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-[#0099ff] pl-3">
-                  <div className="text-xl sm:text-2xl font-bold text-[#0a1628]">{s.value}</div>
+                <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-primary pl-3">
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">{s.value}</div>
                   <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
                 </div>
               ))}
@@ -142,7 +142,7 @@ const DocumentListPage = () => {
                 <button
                   key={`${c.group}:${c.itemId}`}
                   onClick={() => toggleFilter(c.group, c.itemId)}
-                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-[#0099ff] text-white"
+                  className="flex items-center gap-1 text-xs px-3 py-2 min-h-[44px] rounded-full bg-primary text-primary-foreground"
                 >
                   {c.name}
                   <X className="w-3 h-3" />
@@ -170,7 +170,7 @@ const DocumentListPage = () => {
                     }
                     className="flex-1 min-w-0"
                   >
-                    <p className="text-sm font-medium text-[#0a1628] group-hover:text-[#0099ff] line-clamp-2 transition-colors">
+                    <p className="text-[15px] sm:text-sm font-medium text-foreground group-hover:text-primary line-clamp-2 transition-colors">
                       {doc.title}
                     </p>
                     <div className="mt-1 flex items-center gap-2 text-xs text-gray-400 flex-wrap">
@@ -188,7 +188,7 @@ const DocumentListPage = () => {
                     {url && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDownload(url, doc.title, String(doc.id)); }}
-                        className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1"
+                        className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center"
                       >
                         <Download className="w-4 h-4" />
                       </button>

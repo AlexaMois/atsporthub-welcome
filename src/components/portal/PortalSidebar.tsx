@@ -89,7 +89,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
   return (
     <Sidebar className="border-r border-gray-100 bg-white">
       <SidebarHeader className="px-4 py-5">
-        <span className="text-base font-semibold text-[#0a1628]">Портал знаний</span>
+        <span className="text-base font-semibold text-foreground">Портал знаний</span>
       </SidebarHeader>
       <SidebarContent className="px-2">
         {/* All documents */}
@@ -99,7 +99,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
                 <SidebarMenuButton
                 onClick={handleAllDocs}
                 isActive={isDocListPage && noFiltersActive}
-                className="gap-2 data-[active=true]:border-l-[3px] data-[active=true]:border-l-[#0099ff] data-[active=true]:text-[#0099ff] data-[active=true]:rounded-l-none data-[active=true]:pl-[calc(0.5rem-3px)]"
+                className="gap-2 data-[active=true]:border-l-[3px] data-[active=true]:border-l-primary data-[active=true]:text-primary data-[active=true]:rounded-l-none data-[active=true]:pl-[calc(0.5rem-3px)]"
               >
                 <FileText className="h-4 w-4" />
                 <span>Все документы</span>
@@ -145,7 +145,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
                               onClick={() => handleItemClick(g.key, item.id)}
                               isActive={active}
                               size="sm"
-                              className="justify-between data-[active=true]:border-l-[3px] data-[active=true]:border-l-[#0099ff] data-[active=true]:text-[#0099ff] data-[active=true]:rounded-l-none data-[active=true]:pl-[calc(0.5rem-3px)]"
+                              className="justify-between data-[active=true]:border-l-[3px] data-[active=true]:border-l-primary data-[active=true]:text-primary data-[active=true]:rounded-l-none data-[active=true]:pl-[calc(0.5rem-3px)]"
                             >
                               <span className="flex items-center gap-1.5 truncate">
                                 <ItemIcon className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -166,7 +166,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
         <div className="px-3 py-4 mt-auto border-t border-gray-100">
           <button
             onClick={() => setAiOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#0099ff]/10 hover:bg-[#0099ff]/20 transition-colors text-sm font-medium text-[#0099ff]"
+            className="w-full flex items-center gap-2 px-3 py-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-sm font-medium text-primary"
           >
             <Sparkles className="h-4 w-4" />
             Спросить ИИ
@@ -175,12 +175,12 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
         <Sheet open={aiOpen} onOpenChange={setAiOpen}>
           <SheetContent side={isMobile ? "bottom" : "right"}>
             <SheetHeader>
-              <Sparkles className="h-5 w-5 text-[#0099ff]" />
+              <Sparkles className="h-5 w-5 text-primary" />
               <SheetTitle>ИИ-ассистент</SheetTitle>
             </SheetHeader>
             <div className="px-6 py-8 flex flex-col items-center text-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-[#0099ff]/10 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-[#0099ff]" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">
                 Скоро здесь появится ИИ-ассистент
