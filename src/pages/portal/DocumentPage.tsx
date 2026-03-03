@@ -141,7 +141,7 @@ const DocumentPage = () => {
         <>
           {(isPdf(fileUrl) || isOffice(fileUrl)) ? (
             <>
-              <div className="sm:hidden mb-6">
+              <div className="hidden mb-6">
                 {!showPreview ? (
                   <button
                     type="button"
@@ -158,10 +158,10 @@ const DocumentPage = () => {
                   />
                 )}
               </div>
-              <div className="hidden sm:block mb-6">
+              <div className="mb-6">
                 <iframe
                   src={getViewUrl(fileUrl)}
-                  className="w-full h-[600px] rounded-lg border border-gray-200"
+                  className="w-full h-[350px] sm:h-[600px] rounded-lg border border-gray-200"
                   title="Предпросмотр документа"
                 />
               </div>
