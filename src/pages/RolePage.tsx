@@ -91,7 +91,7 @@ const RolePage = () => {
   return (
     <div className="min-h-screen bg-[#f5f7fa]">
       {/* Header */}
-      <header className="h-14 bg-[#0099ff] flex items-center px-5 gap-3">
+      <header className="h-14 bg-primary flex items-center px-5 gap-3">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-white/80 hover:text-white transition-colors text-sm"
@@ -103,7 +103,7 @@ const RolePage = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        <h1 className="text-xl font-bold text-[#0a1628] mb-4">
+        <h1 className="text-xl font-bold text-foreground mb-4">
           Документы для: {decoded}
         </h1>
 
@@ -121,7 +121,7 @@ const RolePage = () => {
         {/* Content */}
         {loading && (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0099ff]" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         )}
 
@@ -149,18 +149,18 @@ const RolePage = () => {
                   key={doc.id}
                   className="bg-white rounded-lg border border-gray-100 px-4 py-3 flex items-center gap-3 hover:shadow-sm transition-shadow"
                 >
-                  <FileText className="h-5 w-5 text-[#0099ff] shrink-0" />
+                  <FileText className="h-5 w-5 text-primary shrink-0" />
 
                   <div className="flex-1 min-w-0">
                     {fileUrl ? (
                       <button
                         onClick={() => window.open(fileUrl, "_blank")}
-                        className="text-sm font-medium text-[#0a1628] hover:text-[#0099ff] transition-colors text-left truncate block w-full"
+                        className="text-sm font-medium text-foreground hover:text-primary transition-colors text-left truncate block w-full"
                       >
                         {doc.title}
                       </button>
                     ) : (
-                      <span className="text-sm font-medium text-[#0a1628] truncate block">
+                      <span className="text-sm font-medium text-foreground truncate block">
                         {doc.title}
                       </span>
                     )}

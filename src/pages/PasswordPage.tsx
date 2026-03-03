@@ -29,7 +29,7 @@ const PasswordPage = () => {
       </div>
 
       <div className="max-w-sm mx-auto mt-16 px-4 flex flex-col items-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: "#0099ff" }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-primary">
           <Lock className="text-white" size={28} />
         </div>
 
@@ -47,7 +47,7 @@ const PasswordPage = () => {
           {error && (
             <p className="text-sm text-destructive">Неверный пароль, попробуйте ещё раз</p>
           )}
-          <Button type="submit" className="w-full rounded-lg text-white" style={{ backgroundColor: "#0099ff" }}>
+          <Button type="submit" className="w-full rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
             Войти
           </Button>
         </form>

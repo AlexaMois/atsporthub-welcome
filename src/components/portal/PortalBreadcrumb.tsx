@@ -50,7 +50,7 @@ export function PortalBreadcrumb() {
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="truncate max-w-[200px]">{docTitle}</BreadcrumbPage>
+                <BreadcrumbPage className="truncate max-w-[140px] sm:max-w-[200px]">{docTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
           )}

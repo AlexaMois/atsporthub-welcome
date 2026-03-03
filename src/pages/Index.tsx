@@ -53,7 +53,7 @@ const Index = () => {
                 <Lock className="absolute top-3 right-3 text-primary" size={18} />
               )}
               <Icon size={32} className="text-primary" />
-              <span className="text-sm font-medium text-foreground">{name}</span>
+              <span className="text-[15px] sm:text-sm font-medium text-foreground">{name}</span>
             </button>
           ))}
         </div>
