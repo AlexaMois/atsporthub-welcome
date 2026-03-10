@@ -14,7 +14,7 @@ const BPIUM_FIELDS = {
   DIRECTIONS: '4',
   ROLES: '5',
   PROJECTS: '6',
-  FILE_URL: '11',
+  FILE_URL: '3',
   STATUS: '12',
   SOURCE: '13',
   DATE: '16',
