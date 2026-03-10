@@ -14,6 +14,9 @@ interface FilterItem {
 const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Роль "Все сотрудники" — специальное значение, означает "показать всё"
+const ALL_EMPLOYEES_ROLE = "Все сотрудники";
+
 const fetchAction = async (action: string) => {
   const res = await fetch(`${FUNC_URL}?action=${action}`, {
     headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
@@ -79,6 +82,7 @@ interface PortalContextType {
   chipCounts: Record<string, number>;
   filteredDocs: any[];
   stats: { label: string; value: number }[];
+  isAllEmployeesMode: boolean;
 }
 
 const PortalContext = createContext<PortalContextType | null>(null);
@@ -102,6 +106,9 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
     source: new Set(),
   });
 
+  // Флаг: роль "Все сотрудники" = показываем все документы без фильтра по роли
+  const isAllEmployeesMode = roleName?.toLowerCase() === ALL_EMPLOYEES_ROLE.toLowerCase();
+
   const load = async () => {
     setLoading(true);
     setError(false);
@@ -114,10 +121,8 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
         fetchAction("get-sources"),
       ]);
       if (Array.isArray(docsData)) setDocs(docsData);
-
       const toItems = (data: any[]): FilterItem[] =>
         Array.isArray(data) ? data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })) : [];
-
       setFilterOptions({
         projects: toItems(projects),
         roles: toItems(roles),
@@ -135,15 +140,17 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
   useEffect(() => { load(); }, []);
 
   // Auto-apply role filter for employee view
+  // ИСКЛЮЧЕНИЕ: "Все сотрудники" — не применяем фильтр, показываем все документы
   useEffect(() => {
     if (!roleName || !filterOptions.roles?.length) return;
+    if (isAllEmployeesMode) return; // Все сотрудники = без фильтра по роли
     const match = filterOptions.roles.find(
       (r) => r.name.toLowerCase() === roleName.toLowerCase()
     );
     if (match) {
       setExclusiveFilter("roles", match.id);
     }
-  }, [filterOptions.roles, roleName]);
+  }, [filterOptions.roles, roleName, isAllEmployeesMode]);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -183,8 +190,12 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
 
   const filteredDocs = useMemo(() => {
     return docs.filter((doc) => {
+      // Фильтр по поиску (работает всегда)
       if (searchQuery && !doc.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
+      // Если режим "Все сотрудники" — фильтр по роли не применяем, остальные фильтры работают
       for (const g of FILTER_GROUPS) {
+        if (g.key === "roles" && isAllEmployeesMode) continue; // пропускаем фильтр по роли
         const sel = activeFilters[g.key];
         if (sel && sel.size > 0) {
           const docField = doc[g.key];
@@ -193,7 +204,7 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
       }
       return true;
     });
-  }, [docs, activeFilters, searchQuery]);
+  }, [docs, activeFilters, searchQuery, isAllEmployeesMode]);
 
   const toggleFilter = (group: string, itemId: string) => {
     setActiveFilters((prev) => {
@@ -231,7 +242,7 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
     <PortalContext.Provider value={{
       loading, error, retry: load, docs, filterOptions, activeFilters, searchQuery,
       setSearchQuery, toggleFilter, setExclusiveFilter, clearFilters,
-      chipCounts, filteredDocs, stats,
+      chipCounts, filteredDocs, stats, isAllEmployeesMode,
     }}>
       {children}
     </PortalContext.Provider>
