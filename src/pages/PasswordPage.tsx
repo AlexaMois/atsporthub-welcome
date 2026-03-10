@@ -4,6 +4,10 @@ import { Lock, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+// Пароль читается из переменной окружения VITE_DIRECTOR_PASSWORD.
+// Никогда не хардкодить пароль прямо в коде — задайте его через .env.
+const DIRECTOR_PASSWORD = import.meta.env.VITE_DIRECTOR_PASSWORD;
+
 const PasswordPage = () => {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
@@ -11,7 +15,16 @@ const PasswordPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "atc2026") {
+
+    if (!DIRECTOR_PASSWORD) {
+      // Защита от ошибочной конфигурации: если переменная не задана,
+      // вход заблокирован — нельзя попасть паролем по умолчанию.
+      console.error("VITE_DIRECTOR_PASSWORD is not set in .env");
+      setError(true);
+      return;
+    }
+
+    if (password === DIRECTOR_PASSWORD) {
       sessionStorage.setItem("director_auth", "true");
       navigate("/dashboard/director");
     } else {
@@ -33,21 +46,31 @@ const PasswordPage = () => {
           <Lock className="text-white" size={28} />
         </div>
 
-        <h1 className="text-xl font-bold mt-6 text-foreground">Защищённый вход</h1>
-        <p className="text-sm text-muted-foreground mt-1">Роль: Генеральный директор</p>
+        <h1 className="mt-4 text-xl font-bold text-foreground">Защищённый вход</h1>
+        <p className="mt-1 text-sm text-muted-foreground text-center">
+          Доступ только для Генерального директора
+        </p>
 
-        <form onSubmit={handleSubmit} className="w-full mt-8 space-y-3">
+        <form onSubmit={handleSubmit} className="w-full mt-6 space-y-3">
           <Input
             type="password"
             placeholder="Введите пароль"
             value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(false); }}
-            className="rounded-lg"
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(false);
+            }}
+            className={error ? "border-destructive" : ""}
+            autoFocus
           />
           {error && (
-            <p className="text-sm text-destructive">Неверный пароль, попробуйте ещё раз</p>
+            <p className="text-sm text-destructive">
+              {!DIRECTOR_PASSWORD
+                ? "Ошибка конфигурации: пароль не настроен. Обратитесь к администратору."
+                : "Неверный пароль"}
+            </p>
           )}
-          <Button type="submit" className="w-full rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button type="submit" className="w-full">
             Войти
           </Button>
         </form>
