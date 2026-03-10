@@ -70,7 +70,6 @@ Deno.serve(async (req) => {
 
     // ------------------------------------------------------------------------
     // action: check-password
-    // Проверяет пароль директора на сервере. Пароль хранится в Supabase Secret VITE_DIRECTOR_PASSWORD.
     // ------------------------------------------------------------------------
     if (action === 'check-password') {
       const body = await req.json();
@@ -99,8 +98,79 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
+    // ------------------------------------------------------------------------
+    // action: summarize
+    // 1. Получает fileUrl из Bpium
+    // 2. Скачивает PDF
+    // 3. Отправляет в Perplexity (так как он лучше всех работает с поиском и саммари)
+    // ------------------------------------------------------------------------
+    if (action === 'summarize') {
+      const body = await req.json();
+      const docId = body?.docId;
+      if (!docId) throw new Error('docId is required');
+
+      // 1. Получаем данные документа из Bpium
+      const docRes = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records/${docId}`, {
+        headers: authHeaders
+      });
+      if (!docRes.ok) throw new Error(`Bpium doc fetch failed: ${docRes.status}`);
+      const docData = await docRes.json();
+      
+      const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
+      let fileUrl = '';
+      if (Array.isArray(fileField) && fileField[0]?.url) fileUrl = fileField[0].url;
+      else if (typeof fileField === 'string') fileUrl = fileField;
+
+      if (!fileUrl) {
+        return new Response(JSON.stringify({ summary: 'К этому документу не прикреплён файл для анализа.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 2. Perplexity API (Sonar Reasoning)
+      // Используем Perplexity, так как он может "читать" документы по ссылке, если они доступны публично.
+      // Bpium ссылки на файлы обычно доступны без доп. авторизации по прямому URL.
+      const PPLX_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
+      if (!PPLX_API_KEY) throw new Error('PERPLEXITY_API_KEY not configured');
+
+      const pplxRes = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PPLX_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'sonar-reasoning',
+          messages: [
+            {
+              role: 'system',
+              content: 'Ты профессиональный ассистент в транспортной компании. Твоя задача — прочитать документ по ссылке и составить краткое саммари (3-5 предложений). Пиши четко, на русском языке. Укажи: 1) О чем документ. 2) Кому он важен. 3) Ключевое требование.'
+            },
+            {
+              role: 'user',
+              content: `Пожалуйста, изучи этот документ и сделай краткое резюме: ${fileUrl}
+
+Название документа: ${docData.values?.[BPIUM_FIELDS.TITLE] || 'Без названия'}`
+            }
+          ]
+        })
+      });
+
+      if (!pplxRes.ok) {
+        const errText = await pplxRes.text();
+        console.error('Perplexity error:', errText);
+        throw new Error('Perplexity API failed');
+      }
+
+      const pplxData = await pplxRes.json();
+      const summary = pplxData.choices[0].message.content;
+
+      return new Response(JSON.stringify({ summary }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     if (action === 'get-documents') {
-      // Загружаем ВСЕ документы через пагинацию
       const records = await fetchAllPages(
         `${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records`,
         authHeaders
@@ -127,60 +197,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === 'get-roles') {
-      const records = await fetchAllPages(
-        `${BASE_URL}/api/v1/catalogs/${CATALOG.ROLES}/records`,
-        authHeaders
-      );
-      const roles = records.map((r: any) => ({
-        id: r.id,
-        name: extractName(r.values?.['2']),
-      }));
-      return new Response(JSON.stringify(roles), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'get-projects') {
-      const records = await fetchAllPages(
-        `${BASE_URL}/api/v1/catalogs/${CATALOG.PROJECTS}/records`,
-        authHeaders
-      );
-      const projects = records.map((r: any) => ({
-        id: r.id,
-        name: extractName(r.values?.['2']),
-      }));
-      return new Response(JSON.stringify(projects), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'get-directions') {
-      const records = await fetchAllPages(
-        `${BASE_URL}/api/v1/catalogs/${CATALOG.DIRECTIONS}/records`,
-        authHeaders
-      );
-      const directions = records.map((r: any) => ({
-        id: r.id,
-        name: extractName(r.values?.['2']),
-      }));
-      return new Response(JSON.stringify(directions), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'get-sources') {
-      const records = await fetchAllPages(
-        `${BASE_URL}/api/v1/catalogs/${CATALOG.SOURCES}/records`,
-        authHeaders
-      );
-      const sources = records.map((r: any) => ({
-        id: r.id,
-        name: extractName(r.values?.['2']),
-      }));
-      return new Response(JSON.stringify(sources), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // ... (остальные действия get-roles, get-projects и т.д.)
+    if (action === 'get-roles' || action === 'get-projects' || action === 'get-directions' || action === 'get-sources') {
+      const catalogId = action === 'get-roles' ? CATALOG.ROLES : 
+                        action === 'get-projects' ? CATALOG.PROJECTS : 
+                        action === 'get-directions' ? CATALOG.DIRECTIONS : CATALOG.SOURCES;
+      const records = await fetchAllPages(`${BASE_URL}/api/v1/catalogs/${catalogId}/records`, authHeaders);
+      const items = records.map((r: any) => ({ id: r.id, name: extractName(r.values?.['2']) }));
+      return new Response(JSON.stringify(items), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ error: 'unknown action' }), {
