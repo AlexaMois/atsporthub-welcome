@@ -133,6 +133,12 @@ Deno.serve(async (req) => {
         }
       }
 
+      if (!fileUrl) {
+        return new Response(JSON.stringify({ summary: 'К этому документу не прикреплён файл для анализа.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       // 2. Lovable AI Gateway
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
       if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
