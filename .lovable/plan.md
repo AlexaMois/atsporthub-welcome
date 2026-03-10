@@ -1,41 +1,38 @@
+## План: Скачивание файла и извлечение текста в Edge Function summarize
 
-# Replace all hardcoded colors with Tailwind design tokens
+### Проблема
 
-## Problem
-Multiple files still use hardcoded hex colors (`#0099ff`, `#0a1628`, `#f5f7fa`) instead of the Tailwind CSS design tokens (`primary`, `foreground`, `background`). The design system already defines the correct WCAG AA-compliant primary color (`#0077cc` at HSL 204 100% 40%) in `src/index.css`, so all references should use the token instead.
+Сейчас в промпт AI передается только URL файла. Gemini не может скачать файл по внешней ссылке и возвращает отказ. Нужно скачать файл на сервере, извлечь текст и передать его в промпт.
 
-## Files and Changes
+### Изменения (1 файл)
 
-### 1. `src/components/portal/PortalLayout.tsx`
-- `bg-[#0099ff]` → `bg-primary` (header)
-- `border-[#0099ff]` → `border-primary` (welcome banner)
-- `text-[#0a1628]` → `text-foreground` (welcome text)
-- `bg-[#f5f7fa]` → `bg-background` (root container)
+`**supabase/functions/bpium-api/index.ts**` — блок `action === 'summarize'`:
 
-### 2. `src/pages/DirectorDashboard.tsx`
-- `bg-[#0099ff]` → `bg-primary` (header, active filter chip)
-- `border-[#0099ff]` → `border-primary` (filter chip, stat cards)
-- `hover:border-[#0099ff]` → `hover:border-primary`
-- `hover:text-[#0099ff]` → `hover:text-primary`
-- `text-[#0099ff]` → `text-primary` (spinner)
-- `text-[#0a1628]` → `text-foreground` (stat values, doc titles)
-- `group-hover:text-[#0099ff]` → `group-hover:text-primary`
-- `bg-[#f5f7fa]` → `bg-background`
-- `focus:ring-[#0099ff]` → `focus:ring-primary` (search input)
+1. **Скачать файл по URL** через `fetch(fileUrl)` на стороне Edge Function, получить `ArrayBuffer`
+2. **Извлечь текст в зависимости от типа файла:**
+  - **PDF**: использовать библиотеку `pdf-parse` (npm-спецификатор `npm:pdf-parse`) для извлечения текста из PDF
+  - **DOCX**: распарсить ZIP-архив (DOCX = ZIP), извлечь `word/document.xml`, убрать XML-теги регулярным выражением — получить чистый текст. Использовать `npm:jszip` для разархивации
+  - **Другие форматы**: вернуть сообщение что формат не поддерживается для саммари
+3. **Обрезать текст** до ~15 000 символов (лимит контекста), чтобы не превысить размер промпта
+4. **Передать извлеченный текст в промпт AI** вместо ссылки:
+  ```
+   content: `Вот текст документа для анализа:\n\n${extractedText}`
+  ```
+5. **Обработка ошибок**: если файл не скачался или текст пустой — вернуть понятное сообщение пользователю
 
-### 3. `src/pages/portal/DocumentListPage.tsx`
-- `focus:ring-[#0099ff]` → `focus:ring-primary` (search input)
+### Зависимости
 
-### 4. `src/pages/RolePage.tsx`
-- `bg-[#f5f7fa]` → `bg-background`
+- `npm:pdf-parse` — извлечение текста из PDF (работает в Deno через npm-спецификатор)
+- `npm:jszip` — разархивация DOCX для извлечения XML с текстом
 
-## Token mapping reference
+### Ограничения
 
-| Hardcoded | Token | Resolved value |
-|-----------|-------|----------------|
-| `#0099ff` | `primary` | `#0077cc` (HSL 204 100% 40%) |
-| `#0a1628` | `foreground` | matches `--foreground` |
-| `#f5f7fa` | `background` | matches `--background` |
-
-## Scope
-CSS/class changes only. Zero functional changes. All pages will consistently use the WCAG AA-compliant `#0077cc` via the design token.
+- Edge Functions имеют лимит времени выполнения (~60 сек) и памяти — очень большие файлы (>10MB) могут не обработаться
+- Форматированные таблицы и изображения в PDF/DOCX будут потеряны при извлечении текста — это ожидаемо для текстового саммари  
+  
+**XLSX:** использовать `npm:xlsx` (SheetJS) — распарсить книгу, пройтись по всем листам, извлечь текст ячеек через `utils.sheet_to_csv` или `utils.sheet_to_txt`, объединить в одну строку.
+  Итоговый список форматов:
+  - PDF → pdf-parse
+  - DOCX → jszip + парсинг XML
+  - XLSX → SheetJS (xlsx)
+  - Остальные → сообщение «формат не поддерживается»
