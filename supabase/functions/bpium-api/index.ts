@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
             },
             {
               role: 'user',
-              content: `Пожалуйста, изучи этот документ и сделай краткое резюме: ${fileUrl}\n\nНазвание документа: ${docData.values?.[BPIUM_FIELDS.TITLE] || 'Без названия'}`
+              content: `Пожалуйста, изучи этот документ и сделай краткое резюме: ${fileUrl}`
             }
           ]
         })
