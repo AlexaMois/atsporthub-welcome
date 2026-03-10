@@ -43,6 +43,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    const action = url.searchParams.get('action');
+
+    // -----------------------------------------------------------------------
+    // action: check-password
+    // Проверяет пароль директора на сервере. Пароль хранится в Supabase Secret DIRECTOR_PASSWORD.
+    // -----------------------------------------------------------------------
+    if (action === 'check-password') {
+      const body = await req.json();
+      const submitted = body?.password ?? '';
+      const expected = Deno.env.get('DIRECTOR_PASSWORD') ?? '';
+
+      if (!expected) {
+        return new Response(JSON.stringify({ ok: false, error: 'not_configured' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const ok = submitted === expected;
+      return new Response(JSON.stringify({ ok }), {
+        status: ok ? 200 : 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const credentials = btoa(
       Deno.env.get('BPIUM_LOGIN') + ':' + Deno.env.get('BPIUM_PASSWORD')
     );
@@ -50,9 +76,6 @@ Deno.serve(async (req) => {
       'Authorization': 'Basic ' + credentials,
       'Content-Type': 'application/json',
     };
-
-    const url = new URL(req.url);
-    const action = url.searchParams.get('action');
 
     if (action === 'get-documents') {
       const res = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records`, {
