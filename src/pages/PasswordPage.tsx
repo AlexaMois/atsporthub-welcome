@@ -4,31 +4,49 @@ import { Lock, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Пароль читается из переменной окружения VITE_DIRECTOR_PASSWORD.
-// Никогда не хардкодить пароль прямо в коде — задайте его через .env.
-const DIRECTOR_PASSWORD = import.meta.env.VITE_DIRECTOR_PASSWORD;
+// URL Edge Function. Пароль проверяется на сервере — не виден в браузере.
+const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
 
 const PasswordPage = () => {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!password.trim()) return;
 
-    if (!DIRECTOR_PASSWORD) {
-      // Защита от ошибочной конфигурации: если переменная не задана,
-      // вход заблокирован — нельзя попасть паролем по умолчанию.
-      console.error("VITE_DIRECTOR_PASSWORD is not set in .env");
-      setError(true);
-      return;
-    }
+    setLoading(true);
+    setError(null);
 
-    if (password === DIRECTOR_PASSWORD) {
-      sessionStorage.setItem("director_auth", "true");
-      navigate("/dashboard/director");
-    } else {
-      setError(true);
+    try {
+      const res = await fetch(`${FUNC_URL}?action=check-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (res.status === 200) {
+        sessionStorage.setItem("director_auth", "true");
+        navigate("/dashboard/director");
+      } else if (res.status === 401) {
+        setError("Неверный пароль");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data?.error === "not_configured") {
+          setError("Ошибка конфигурации: пароль не настроен. Обратитесь к администратору.");
+        } else {
+          setError("Ошибка сервера. Попробуйте позже.");
+        }
+      }
+    } catch {
+      setError("Нет связи с сервером. Проверьте интернет.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,20 +76,17 @@ const PasswordPage = () => {
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
-              setError(false);
+              setError(null);
             }}
             className={error ? "border-destructive" : ""}
             autoFocus
+            disabled={loading}
           />
           {error && (
-            <p className="text-sm text-destructive">
-              {!DIRECTOR_PASSWORD
-                ? "Ошибка конфигурации: пароль не настроен. Обратитесь к администратору."
-                : "Неверный пароль"}
-            </p>
+            <p className="text-sm text-destructive">{error}</p>
           )}
-          <Button type="submit" className="w-full">
-            Войти
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Проверка..." : "Войти"}
           </Button>
         </form>
       </div>
