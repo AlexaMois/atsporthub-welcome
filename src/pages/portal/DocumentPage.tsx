@@ -244,7 +244,8 @@ const DocumentPage = () => {
       <div className="flex justify-between mt-8">
         {prevDoc ? (
           <Button
-feat: кнопка ИИ-Саммари на странице документа            variant="outline"
+            type="button"
+            variant="outline"
             onClick={() => navigate(roleName 
               ? `/role/${encodeURIComponent(roleName)}/doc/${prevDoc.id}` 
               : `/dashboard/director/doc/${prevDoc.id}`
