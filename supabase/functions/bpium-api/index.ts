@@ -1,13 +1,13 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
 };
 
 const BASE_URL = 'https://neiroresheniya.bpium.ru';
 
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Bpium field IDs for catalog 56 (Documents)
-// ---------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 const BPIUM_FIELDS = {
   TITLE: '2',
   RESPONSIBLE: '3',
@@ -37,6 +37,28 @@ const extractName = (val: any): string => {
   return String(val);
 };
 
+// ------------------------------------------------------------------------
+// fetchAllPages: загружает все записи через пагинацию (по 100 за раз)
+// ------------------------------------------------------------------------
+const fetchAllPages = async (url: string, authHeaders: Record<string, string>): Promise<any[]> => {
+  const PAGE_SIZE = 100;
+  let page = 1;
+  const allRecords: any[] = [];
+
+  while (true) {
+    const pageUrl = `${url}?limit=${PAGE_SIZE}&offset=${(page - 1) * PAGE_SIZE}`;
+    const res = await fetch(pageUrl, { headers: authHeaders });
+    if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
+    const records = await res.json();
+    if (!Array.isArray(records) || records.length === 0) break;
+    allRecords.push(...records);
+    if (records.length < PAGE_SIZE) break; // последняя страница
+    page++;
+  }
+
+  return allRecords;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,14 +68,14 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
 
-    // -----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // action: check-password
-    // Проверяет пароль директора на сервере. Пароль хранится в Supabase Secret DIRECTOR_PASSWORD.
-    // -----------------------------------------------------------------------
+    // Проверяет пароль директора на сервере. Пароль хранится в Supabase Secret VITE_DIRECTOR_PASSWORD.
+    // ------------------------------------------------------------------------
     if (action === 'check-password') {
       const body = await req.json();
       const submitted = body?.password ?? '';
-            const expected = Deno.env.get('VITE_DIRECTOR_PASSWORD') ?? '';
+      const expected = Deno.env.get('VITE_DIRECTOR_PASSWORD') ?? '';
 
       if (!expected) {
         return new Response(JSON.stringify({ ok: false, error: 'not_configured' }), {
@@ -78,11 +100,12 @@ Deno.serve(async (req) => {
     };
 
     if (action === 'get-documents') {
-      const res = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records`, {
-        headers: authHeaders,
-      });
-      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
-      const records = await res.json();
+      // Загружаем ВСЕ документы через пагинацию
+      const records = await fetchAllPages(
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records`,
+        authHeaders
+      );
+
       const documents = records.map((r: any) => ({
         id: r.id,
         title: r.values?.[BPIUM_FIELDS.TITLE],
@@ -98,17 +121,17 @@ Deno.serve(async (req) => {
         version: r.values?.[BPIUM_FIELDS.VERSION],
         createdAt: r.createdAt,
       }));
+
       return new Response(JSON.stringify(documents), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (action === 'get-roles') {
-      const res = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.ROLES}/records`, {
-        headers: authHeaders,
-      });
-      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
-      const records = await res.json();
+      const records = await fetchAllPages(
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.ROLES}/records`,
+        authHeaders
+      );
       const roles = records.map((r: any) => ({
         id: r.id,
         name: extractName(r.values?.['2']),
@@ -119,11 +142,10 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'get-projects') {
-      const res = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.PROJECTS}/records`, {
-        headers: authHeaders,
-      });
-      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
-      const records = await res.json();
+      const records = await fetchAllPages(
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.PROJECTS}/records`,
+        authHeaders
+      );
       const projects = records.map((r: any) => ({
         id: r.id,
         name: extractName(r.values?.['2']),
@@ -134,11 +156,10 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'get-directions') {
-      const res = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DIRECTIONS}/records`, {
-        headers: authHeaders,
-      });
-      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
-      const records = await res.json();
+      const records = await fetchAllPages(
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.DIRECTIONS}/records`,
+        authHeaders
+      );
       const directions = records.map((r: any) => ({
         id: r.id,
         name: extractName(r.values?.['2']),
@@ -149,11 +170,10 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'get-sources') {
-      const res = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.SOURCES}/records`, {
-        headers: authHeaders,
-      });
-      if (!res.ok) throw new Error(`Bpium responded ${res.status}`);
-      const records = await res.json();
+      const records = await fetchAllPages(
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.SOURCES}/records`,
+        authHeaders
+      );
       const sources = records.map((r: any) => ({
         id: r.id,
         name: extractName(r.values?.['2']),
@@ -163,13 +183,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Unknown action' }), {
+    return new Response(JSON.stringify({ error: 'unknown action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: message }), {
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
