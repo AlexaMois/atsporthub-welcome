@@ -123,7 +123,7 @@ const DocumentPage = () => {
           "Content-Type": "application/json",
           "apikey": ANON_KEY,
         },
-        body: JSON.stringify({ docId }),
+        body: JSON.stringify({ docId: String(doc.id), fileUrl }),
       });
 
       if (!res.ok) throw new Error("Summarization failed");

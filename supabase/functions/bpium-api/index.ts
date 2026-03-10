@@ -107,29 +107,22 @@ Deno.serve(async (req) => {
     if (action === 'summarize') {
       const body = await req.json();
       const docId = body?.docId;
-      if (!docId) throw new Error('docId is required');
+      let fileUrl = body?.fileUrl || '';
 
-      // 1. Получаем данные документа из Bpium
-      const docRes = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records/${docId}`, {
-        headers: authHeaders
-      });
-      if (!docRes.ok) throw new Error(`Bpium doc fetch failed: ${docRes.status}`);
-      const docData = await docRes.json();
-      
-      // Extract file URL: try field 11 (fileUrl), fallback to field 3 (responsible)
-      let fileUrl = '';
-      const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
-      if (Array.isArray(fileField) && fileField[0]?.url) {
-        fileUrl = fileField[0].url;
-      } else if (typeof fileField === 'string' && fileField) {
-        fileUrl = fileField;
-      }
-
-      // Fallback: field 3 (responsible) may contain attached file
-      if (!fileUrl) {
-        const respField = docData.values?.[BPIUM_FIELDS.RESPONSIBLE];
-        if (Array.isArray(respField) && respField[0]?.url) {
-          fileUrl = respField[0].url;
+      // If fileUrl not provided by client, fetch from Bpium as fallback
+      if (!fileUrl && docId) {
+        const docRes = await fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records/${docId}`, {
+          headers: authHeaders
+        });
+        if (docRes.ok) {
+          const docData = await docRes.json();
+          const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
+          if (Array.isArray(fileField) && fileField[0]?.url) fileUrl = fileField[0].url;
+          else if (typeof fileField === 'string' && fileField) fileUrl = fileField;
+          if (!fileUrl) {
+            const respField = docData.values?.[BPIUM_FIELDS.RESPONSIBLE];
+            if (Array.isArray(respField) && respField[0]?.url) fileUrl = respField[0].url;
+          }
         }
       }
 
