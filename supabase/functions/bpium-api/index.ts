@@ -128,7 +128,69 @@ Deno.serve(async (req) => {
         });
       }
 
-      // 2. Lovable AI Gateway
+      // --- Download file and extract text ---
+      const fileName = fileUrl.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
+      const ext = fileName.split('.').pop() || '';
+
+      let extractedText = '';
+
+      try {
+        const fileRes = await fetch(fileUrl);
+        if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
+        const fileBuffer = await fileRes.arrayBuffer();
+        const fileSize = fileBuffer.byteLength;
+
+        if (fileSize > 10 * 1024 * 1024) {
+          return new Response(JSON.stringify({ summary: 'Файл слишком большой (>10MB) для анализа.' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        if (ext === 'pdf') {
+          const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
+          const result = await pdfParse(new Uint8Array(fileBuffer));
+          extractedText = result.text || '';
+        } else if (ext === 'docx') {
+          const JSZip = (await import('npm:jszip@3.10.1')).default;
+          const zip = await JSZip.loadAsync(fileBuffer);
+          const docXml = await zip.file('word/document.xml')?.async('string');
+          if (docXml) {
+            extractedText = docXml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          }
+        } else if (ext === 'xlsx' || ext === 'xls') {
+          const XLSX = await import('npm:xlsx@0.18.5');
+          const workbook = XLSX.read(new Uint8Array(fileBuffer), { type: 'array' });
+          const parts: string[] = [];
+          for (const sheetName of workbook.SheetNames) {
+            const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+            if (csv.trim()) parts.push(`--- ${sheetName} ---\n${csv}`);
+          }
+          extractedText = parts.join('\n\n');
+        } else {
+          return new Response(JSON.stringify({ summary: `Формат .${ext} не поддерживается для анализа. Поддерживаются: PDF, DOCX, XLSX.` }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      } catch (dlErr) {
+        console.error('File download/parse error:', dlErr);
+        return new Response(JSON.stringify({ summary: 'Не удалось скачать или прочитать файл для анализа.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (!extractedText.trim()) {
+        return new Response(JSON.stringify({ summary: 'Не удалось извлечь текст из файла. Возможно, документ содержит только изображения.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Truncate to ~15000 chars
+      const MAX_TEXT = 15000;
+      if (extractedText.length > MAX_TEXT) {
+        extractedText = extractedText.slice(0, MAX_TEXT) + '\n\n[Текст обрезан — показаны первые ~15000 символов]';
+      }
+
+      // --- AI call with extracted text ---
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
       if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
@@ -143,11 +205,11 @@ Deno.serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: 'Ты профессиональный ассистент в транспортной компании. Твоя задача — прочитать документ по ссылке и составить краткое саммари (3-5 предложений). Пиши четко, на русском языке. Укажи: 1) О чем документ. 2) Кому он важен. 3) Ключевое требование.'
+              content: 'Ты профессиональный ассистент в транспортной компании. Твоя задача — прочитать текст документа и составить краткое саммари (3-5 предложений). Пиши четко, на русском языке. Укажи: 1) О чем документ. 2) Кому он важен. 3) Ключевое требование.'
             },
             {
               role: 'user',
-              content: `Пожалуйста, изучи этот документ и сделай краткое резюме: ${fileUrl}`
+              content: `Вот текст документа для анализа:\n\n${extractedText}`
             }
           ]
         })
