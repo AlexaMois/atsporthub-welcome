@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     if (action === 'check-password') {
       const body = await req.json();
       const submitted = body?.password ?? '';
-      const expected = Deno.env.get('DIRECTOR_PASSWORD') ?? '';
+            const expected = Deno.env.get('VITE_DIRECTOR_PASSWORD') ?? '';
 
       if (!expected) {
         return new Response(JSON.stringify({ ok: false, error: 'not_configured' }), {
