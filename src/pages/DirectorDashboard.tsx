@@ -56,9 +56,6 @@ const extractFileUrl = (doc: any): string | null => {
     if (Array.isArray(doc.fileUrl) && doc.fileUrl[0]?.url) return doc.fileUrl[0].url;
     if (typeof doc.fileUrl === "string") return doc.fileUrl;
   }
-  if (Array.isArray(doc.responsible) && doc.responsible[0]?.url) {
-    return doc.responsible[0].url;
-  }
   return null;
 };
 

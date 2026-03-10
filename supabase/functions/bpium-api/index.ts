@@ -119,10 +119,6 @@ Deno.serve(async (req) => {
           const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
           if (Array.isArray(fileField) && fileField[0]?.url) fileUrl = fileField[0].url;
           else if (typeof fileField === 'string' && fileField) fileUrl = fileField;
-          if (!fileUrl) {
-            const respField = docData.values?.[BPIUM_FIELDS.RESPONSIBLE];
-            if (Array.isArray(respField) && respField[0]?.url) fileUrl = respField[0].url;
-          }
         }
       }
 
