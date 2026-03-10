@@ -14,7 +14,7 @@ const BPIUM_FIELDS = {
   DIRECTIONS: '4',
   ROLES: '5',
   PROJECTS: '6',
-  FILE_URL: '11',
+  FILE_URL: '3',
   STATUS: '12',
   SOURCE: '13',
   DATE: '16',
@@ -119,10 +119,6 @@ Deno.serve(async (req) => {
           const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
           if (Array.isArray(fileField) && fileField[0]?.url) fileUrl = fileField[0].url;
           else if (typeof fileField === 'string' && fileField) fileUrl = fileField;
-          if (!fileUrl) {
-            const respField = docData.values?.[BPIUM_FIELDS.RESPONSIBLE];
-            if (Array.isArray(respField) && respField[0]?.url) fileUrl = respField[0].url;
-          }
         }
       }
 
