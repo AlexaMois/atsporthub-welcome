@@ -127,20 +127,18 @@ Deno.serve(async (req) => {
         });
       }
 
-      // 2. Perplexity API (Sonar Reasoning)
-      // Используем Perplexity, так как он может "читать" документы по ссылке, если они доступны публично.
-      // Bpium ссылки на файлы обычно доступны без доп. авторизации по прямому URL.
-      const PPLX_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
-      if (!PPLX_API_KEY) throw new Error('PERPLEXITY_API_KEY not configured');
+      // 2. Lovable AI Gateway
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
-      const pplxRes = await fetch('https://api.perplexity.ai/chat/completions', {
+      const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PPLX_API_KEY}`,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'sonar-reasoning',
+          model: 'google/gemini-2.5-flash',
           messages: [
             {
               role: 'system',
@@ -148,22 +146,22 @@ Deno.serve(async (req) => {
             },
             {
               role: 'user',
-              content: `Пожалуйста, изучи этот документ и сделай краткое резюме: ${fileUrl}
-
-Название документа: ${docData.values?.[BPIUM_FIELDS.TITLE] || 'Без названия'}`
+              content: `Пожалуйста, изучи этот документ и сделай краткое резюме: ${fileUrl}\n\nНазвание документа: ${docData.values?.[BPIUM_FIELDS.TITLE] || 'Без названия'}`
             }
           ]
         })
       });
 
-      if (!pplxRes.ok) {
-        const errText = await pplxRes.text();
-        console.error('Perplexity error:', errText);
-        throw new Error('Perplexity API failed');
+      if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        console.error('Lovable AI error:', aiRes.status, errText);
+        if (aiRes.status === 429) throw new Error('Rate limit exceeded, try again later');
+        if (aiRes.status === 402) throw new Error('AI credits exhausted');
+        throw new Error('AI Gateway failed');
       }
 
-      const pplxData = await pplxRes.json();
-      const summary = pplxData.choices[0].message.content;
+      const aiData = await aiRes.json();
+      const summary = aiData.choices[0].message.content;
 
       return new Response(JSON.stringify({ summary }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
