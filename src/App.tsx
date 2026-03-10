@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const Index = lazy(() => import("./pages/Index"));
 const PasswordPage = lazy(() => import("./pages/PasswordPage"));
@@ -24,14 +25,26 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login/director" element={<PasswordPage />} />
-            <Route path="/dashboard/director" element={<PortalLayout />}>
+
+            {/* Маршруты для директора — защищены ProtectedRoute */}
+            <Route
+              path="/dashboard/director"
+              element={
+                <ProtectedRoute>
+                  <PortalLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<DocumentListPage />} />
               <Route path="doc/:docId" element={<DocumentPage />} />
             </Route>
+
+            {/* Обычный портал по роли */}
             <Route path="/role/:roleName" element={<PortalLayout />}>
               <Route index element={<DocumentListPage />} />
               <Route path="doc/:docId" element={<DocumentPage />} />
             </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
