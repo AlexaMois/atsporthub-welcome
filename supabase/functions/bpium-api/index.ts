@@ -116,15 +116,21 @@ Deno.serve(async (req) => {
       if (!docRes.ok) throw new Error(`Bpium doc fetch failed: ${docRes.status}`);
       const docData = await docRes.json();
       
-      const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
+      // Extract file URL: try field 11 (fileUrl), fallback to field 3 (responsible)
       let fileUrl = '';
-      if (Array.isArray(fileField) && fileField[0]?.url) fileUrl = fileField[0].url;
-      else if (typeof fileField === 'string') fileUrl = fileField;
+      const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
+      if (Array.isArray(fileField) && fileField[0]?.url) {
+        fileUrl = fileField[0].url;
+      } else if (typeof fileField === 'string' && fileField) {
+        fileUrl = fileField;
+      }
 
+      // Fallback: field 3 (responsible) may contain attached file
       if (!fileUrl) {
-        return new Response(JSON.stringify({ summary: 'К этому документу не прикреплён файл для анализа.' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        const respField = docData.values?.[BPIUM_FIELDS.RESPONSIBLE];
+        if (Array.isArray(respField) && respField[0]?.url) {
+          fileUrl = respField[0].url;
+        }
       }
 
       // 2. Lovable AI Gateway
