@@ -130,7 +130,8 @@ const DocumentPage = () => {
       if (!res.ok) throw new Error("Summarization failed");
       const data = await res.json();
       setSummary(data.summary);
-      toast.success("Саммари готово!");
+      setSummaryMeta({ cached: data.cached, generatedAt: data.generatedAt });
+      toast.success(data.cached ? "Саммари загружено из кеша" : "Саммари готово!");
     } catch (err) {
       console.error(err);
       toast.error("Не удалось создать саммари.");
