@@ -145,6 +145,17 @@ Deno.serve(async (req) => {
       let extractedText = '';
 
       try {
+        // Check file size first via HEAD
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for edge function memory
+        const headRes = await fetch(fileUrl, { method: 'HEAD' });
+        const contentLength = parseInt(headRes.headers.get('content-length') || '0', 10);
+        
+        if (contentLength > MAX_FILE_SIZE) {
+          return new Response(JSON.stringify({ summary: `Файл слишком большой для анализа (${Math.round(contentLength / 1024 / 1024)}МБ). Максимум — 10МБ.` }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
         const fileRes = await fetch(fileUrl);
         if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
         const fileBuffer = await fileRes.arrayBuffer();
