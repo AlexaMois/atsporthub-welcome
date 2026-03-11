@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import PdfViewer from "@/components/portal/PdfViewer";
+import OfficeViewer from "@/components/portal/OfficeViewer";
 import {
   usePortal,
   getStatusId,
