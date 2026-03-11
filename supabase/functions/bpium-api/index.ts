@@ -143,8 +143,8 @@ Deno.serve(async (req) => {
       const ext = fileName.split('.').pop() || '';
 
       let extractedText = '';
+      let isPartial = false;
 
-      try {
         // Check file size first via HEAD
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for edge function memory
         const headRes = await fetch(fileUrl, { method: 'HEAD' });
