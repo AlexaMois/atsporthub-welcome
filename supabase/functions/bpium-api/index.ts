@@ -150,8 +150,8 @@ Deno.serve(async (req) => {
         const fileBuffer = await fileRes.arrayBuffer();
         const fileSize = fileBuffer.byteLength;
 
-        if (fileSize > 10 * 1024 * 1024) {
-          return new Response(JSON.stringify({ summary: 'Файл слишком большой (>10MB) для анализа.' }), {
+        if (fileSize > 30 * 1024 * 1024) {
+                    return new Response(JSON.stringify({ summary: 'Файл слишком большой (>30MB) для анализа.' }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
