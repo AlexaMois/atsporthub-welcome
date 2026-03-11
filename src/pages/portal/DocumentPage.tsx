@@ -174,6 +174,9 @@ const DocumentPage = () => {
           <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
           <h3 className="text-primary font-semibold text-sm mb-2 flex items-center gap-2">
             <FileText className="w-4 h-4" /> ИИ-Резюме документа
+            {summaryMeta?.cached && (
+              <span className="text-xs font-normal text-muted-foreground">(из кеша)</span>
+            )}
           </h3>
           <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
             {summary}
