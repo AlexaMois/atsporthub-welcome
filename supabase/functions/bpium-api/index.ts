@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
         const fileBuffer = await fileRes.arrayBuffer();
         const fileSize = fileBuffer.byteLength;
 
-                const isPartial = fileSize < fileBuffer.byteLength || fileRes.status === 206;
+                        const isPartial = fileRes.status === 206 || fileBuffer.byteLength < PARTIAL_SIZE;
         if (ext === 'pdf') {
           const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
