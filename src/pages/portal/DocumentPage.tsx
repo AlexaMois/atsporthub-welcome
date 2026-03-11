@@ -184,13 +184,14 @@ const DocumentPage = () => {
       {/* File preview */}
       {fileUrl ? (
         <>
-          {(isPdf(fileUrl) || isOffice(fileUrl)) ? (
+          {isPdf(fileUrl) ? (
             <div className="mb-6">
-              <iframe
-                src={getViewUrl(fileUrl)}
-                className="w-full h-[350px] sm:h-[600px] rounded-lg border border-gray-200"
-                title="Предпросмотр документа"
-              />
+              <PdfViewer url={fileUrl} />
+            </div>
+          ) : isOffice(fileUrl) ? (
+            <div className="mb-6 flex items-center gap-3 p-4 rounded-lg border border-border bg-muted/30 text-sm text-muted-foreground">
+              <FileSpreadsheet className="w-5 h-5 shrink-0" />
+              <span>Предпросмотр Office-файлов недоступен в браузере. Используйте кнопки ниже, чтобы открыть или скачать файл.</span>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground mb-6">
