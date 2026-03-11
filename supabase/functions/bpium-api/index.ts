@@ -145,6 +145,7 @@ Deno.serve(async (req) => {
       let extractedText = '';
       let isPartial = false;
 
+      try {
         // Check file size first via HEAD
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for edge function memory
         const headRes = await fetch(fileUrl, { method: 'HEAD' });
@@ -159,7 +160,6 @@ Deno.serve(async (req) => {
         const fileRes = await fetch(fileUrl);
         if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
         const fileBuffer = await fileRes.arrayBuffer();
-        const isPartial = false;
         if (ext === 'pdf') {
           const pdfParse = (await import('pdf-parse')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
