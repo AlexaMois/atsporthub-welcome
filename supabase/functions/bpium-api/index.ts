@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
           const pdfParse = (await import('pdf-parse')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
           extractedText = result.text || '';
-        } else if ext === 'docx' || ext === 'doc') {
+        } else if (ext === 'docx' || ext === 'doc') {
           const JSZip = (await import('jszip')).default;
           const zip = await JSZip.loadAsync(fileBuffer);
           const docXml = await zip.file('word/document.xml')?.async('string');

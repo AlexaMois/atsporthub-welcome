@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 import PdfViewer from "@/components/portal/PdfViewer";
 import OfficeViewer from "@/components/portal/OfficeViewer";
 import {
@@ -172,9 +173,9 @@ const DocumentPage = () => {
               <span className="text-xs font-normal text-muted-foreground">(из кеша)</span>
             )}
           </h3>
-          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-            {summary}
-          </p>
+           <div className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-strong:text-foreground prose-ul:my-1 prose-li:my-0">
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </div>
         </div>
       )}
 
