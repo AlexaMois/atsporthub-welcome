@@ -173,9 +173,9 @@ const DocumentPage = () => {
               <span className="text-xs font-normal text-muted-foreground">(из кеша)</span>
             )}
           </h3>
-          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-            {summary}
-          </p>
+           <div className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-strong:text-foreground prose-ul:my-1 prose-li:my-0">
+            <ReactMarkdown>{summary}</ReactMarkdown>
+          </div>
         </div>
       )}
 
