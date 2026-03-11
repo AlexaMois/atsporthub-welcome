@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
         const fileBuffer = await fileRes.arrayBuffer();
         const isPartial = false;
         if (ext === 'pdf') {
-          const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
+          const pdfParse = (await import('pdf-parse')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
           extractedText = result.text || '';
         } else if (ext === 'docx') {
