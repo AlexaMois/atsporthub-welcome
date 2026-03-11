@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
             extractedText = docXml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
           }
         } else if (ext === 'xlsx' || ext === 'xls') {
-          const XLSX = await import('npm:xlsx@0.18.5');
+          const XLSX = await import('xlsx');
           const workbook = XLSX.read(new Uint8Array(fileBuffer), { type: 'array' });
           const parts: string[] = [];
           for (const sheetName of workbook.SheetNames) {
