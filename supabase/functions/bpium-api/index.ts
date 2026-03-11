@@ -145,17 +145,13 @@ Deno.serve(async (req) => {
       let extractedText = '';
 
       try {
-        const fileRes = await fetch(fileUrl);
-        if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
+                const PARTIAL_SIZE = 5 * 1024 * 1024; // 5MB — first chunk only
+                const fileRes = await fetch(fileUrl, { headers: { 'Range': `bytes=0-${PARTIAL_SIZE - 1}` } });
+                        if (!fileRes.ok && fileRes.status !== 206) throw new Error(`Failed to download file: ${fileRes.status}`);
         const fileBuffer = await fileRes.arrayBuffer();
         const fileSize = fileBuffer.byteLength;
 
-        if (fileSize > 30 * 1024 * 1024) {
-                    return new Response(JSON.stringify({ summary: 'Файл слишком большой (>30MB) для анализа.' }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
-
+                const isPartial = fileSize < fileBuffer.byteLength || fileRes.status === 206;
         if (ext === 'pdf') {
           const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
@@ -219,7 +215,7 @@ Deno.serve(async (req) => {
             },
             {
               role: 'user',
-              content: `Вот текст документа для анализа:\n\n${extractedText}`
+                          content: `Вот текст документа для анализа${isPartial ? ' (показаны первые ~5MB файла, документ может быть больше)' : ''}:\n\n${extractedText}`
             }
           ]
         })
