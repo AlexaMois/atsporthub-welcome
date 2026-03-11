@@ -186,9 +186,11 @@ const DocumentPage = () => {
               <PdfViewer url={fileUrl} />
             </div>
           ) : isOffice(fileUrl) ? (
-            <div className="mb-6 flex items-center gap-3 p-4 rounded-lg border border-border bg-muted/30 text-sm text-muted-foreground">
-              <FileSpreadsheet className="w-5 h-5 shrink-0" />
-              <span>Предпросмотр Office-файлов недоступен в браузере. Используйте кнопки ниже, чтобы открыть или скачать файл.</span>
+            <div className="mb-6">
+              <OfficeViewer
+                url={fileUrl}
+                onDownload={() => handleDownload(fileUrl, doc.title, String(doc.id))}
+              />
             </div>
           ) : (
             <p className="text-sm text-muted-foreground mb-6">
