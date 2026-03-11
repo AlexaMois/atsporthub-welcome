@@ -143,28 +143,36 @@ Deno.serve(async (req) => {
       const ext = fileName.split('.').pop() || '';
 
       let extractedText = '';
+      let isPartial = false;
 
       try {
-                const PARTIAL_SIZE = 5 * 1024 * 1024; // 5MB — first chunk only
-                const fileRes = await fetch(fileUrl, { headers: { 'Range': `bytes=0-${PARTIAL_SIZE - 1}` } });
-                        if (!fileRes.ok && fileRes.status !== 206) throw new Error(`Failed to download file: ${fileRes.status}`);
-        const fileBuffer = await fileRes.arrayBuffer();
-        const fileSize = fileBuffer.byteLength;
+        // Check file size first via HEAD
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for edge function memory
+        const headRes = await fetch(fileUrl, { method: 'HEAD' });
+        const contentLength = parseInt(headRes.headers.get('content-length') || '0', 10);
+        
+        if (contentLength > MAX_FILE_SIZE) {
+          return new Response(JSON.stringify({ summary: `Файл слишком большой для анализа (${Math.round(contentLength / 1024 / 1024)}МБ). Максимум — 10МБ.` }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
 
-                        const isPartial = fileRes.status === 206 || fileBuffer.byteLength < PARTIAL_SIZE;
+        const fileRes = await fetch(fileUrl);
+        if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
+        const fileBuffer = await fileRes.arrayBuffer();
         if (ext === 'pdf') {
-          const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
+          const pdfParse = (await import('pdf-parse')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
           extractedText = result.text || '';
         } else if (ext === 'docx') {
-          const JSZip = (await import('npm:jszip@3.10.1')).default;
+          const JSZip = (await import('jszip')).default;
           const zip = await JSZip.loadAsync(fileBuffer);
           const docXml = await zip.file('word/document.xml')?.async('string');
           if (docXml) {
             extractedText = docXml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
           }
         } else if (ext === 'xlsx' || ext === 'xls') {
-          const XLSX = await import('npm:xlsx@0.18.5');
+          const XLSX = await import('xlsx');
           const workbook = XLSX.read(new Uint8Array(fileBuffer), { type: 'array' });
           const parts: string[] = [];
           for (const sheetName of workbook.SheetNames) {
