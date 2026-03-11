@@ -67,13 +67,6 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
   }
 };
 
-const getViewUrl = (url: string): string => {
-  const lower = url.toLowerCase();
-  if (lower.match(/\.(docx?|xlsx?|pptx?)(\?|$)/)) {
-    return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-  }
-  return url;
-};
 
 const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
