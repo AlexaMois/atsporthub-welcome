@@ -198,7 +198,7 @@ const DocumentPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <Button
               type="button"
-              onClick={() => window.open(getViewUrl(fileUrl), "_blank")}
+              onClick={() => window.open(fileUrl, "_blank")}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
               <ExternalLink className="w-4 h-4" /> Открыть файл
