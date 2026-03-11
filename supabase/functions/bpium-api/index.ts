@@ -21,6 +21,7 @@ const BPIUM_FIELDS = {
   TAGS: '17',
   VERSION: '18',
     CHECKLIST: '19',
+      SUMMARY_CACHE: '20',
 } as const;
 
 // Catalog IDs in Bpium
@@ -109,6 +110,7 @@ Deno.serve(async (req) => {
       const body = await req.json();
       const docId = body?.docId;
       let fileUrl = body?.fileUrl || '';
+          const force = body?.force === true;
 
       // If fileUrl not provided by client, fetch from Bpium as fallback
       if (!fileUrl && docId) {
@@ -120,6 +122,13 @@ Deno.serve(async (req) => {
           const fileField = docData.values?.[BPIUM_FIELDS.FILE_URL];
           if (Array.isArray(fileField) && fileField[0]?.url) fileUrl = fileField[0].url;
           else if (typeof fileField === 'string' && fileField) fileUrl = fileField;
+                  // Read cached summary
+        const cachedSummary = docData.values?.[BPIUM_FIELDS.SUMMARY_CACHE];
+        if (!force && cachedSummary && typeof cachedSummary === 'string' && cachedSummary.trim()) {
+          return new Response(JSON.stringify({ summary: cachedSummary, cached: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
         }
       }
 
@@ -226,6 +235,14 @@ Deno.serve(async (req) => {
 
       const aiData = await aiRes.json();
       const summary = aiData.choices[0].message.content;
+          // Save summary to Bpium cache (fire and forget)
+    if (docId) {
+      fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records/${docId}`, {
+        method: 'PATCH',
+        headers: authHeaders,
+        body: JSON.stringify({ values: { [BPIUM_FIELDS.SUMMARY_CACHE]: summary } })
+      }).catch((e: unknown) => console.error('Cache write failed:', e));
+    }
 
       return new Response(JSON.stringify({ summary }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
