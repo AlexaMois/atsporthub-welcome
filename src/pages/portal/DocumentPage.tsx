@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
