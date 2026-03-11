@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2, FileSpreadsheet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import PdfViewer from "@/components/portal/PdfViewer";
 import {
   usePortal,
   getStatusId,
@@ -66,13 +67,6 @@ const handleDownload = async (url: string, title?: string, docId?: string) => {
   }
 };
 
-const getViewUrl = (url: string): string => {
-  const lower = url.toLowerCase();
-  if (lower.match(/\.(docx?|xlsx?|pptx?)(\?|$)/)) {
-    return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-  }
-  return url;
-};
 
 const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
@@ -81,9 +75,9 @@ const DocumentPage = () => {
   const { docId, roleName } = useParams<{ docId: string; roleName?: string }>();
   const navigate = useNavigate();
   const { docs, loading } = usePortal();
-  const [showPreview, setShowPreview] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
+  const [summaryMeta, setSummaryMeta] = useState<{ cached?: boolean; generatedAt?: string } | null>(null);
 
   const currentIndex = docs.findIndex((d) => String(d.id) === docId);
   const prevDoc = currentIndex > 0 ? docs[currentIndex - 1] : null;
@@ -129,7 +123,8 @@ const DocumentPage = () => {
       if (!res.ok) throw new Error("Summarization failed");
       const data = await res.json();
       setSummary(data.summary);
-      toast.success("Саммари готово!");
+      setSummaryMeta({ cached: data.cached, generatedAt: data.generatedAt });
+      toast.success(data.cached ? "Саммари загружено из кеша" : "Саммари готово!");
     } catch (err) {
       console.error(err);
       toast.error("Не удалось создать саммари.");
@@ -172,6 +167,9 @@ const DocumentPage = () => {
           <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
           <h3 className="text-primary font-semibold text-sm mb-2 flex items-center gap-2">
             <FileText className="w-4 h-4" /> ИИ-Резюме документа
+            {summaryMeta?.cached && (
+              <span className="text-xs font-normal text-muted-foreground">(из кеша)</span>
+            )}
           </h3>
           <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
             {summary}
@@ -182,13 +180,14 @@ const DocumentPage = () => {
       {/* File preview */}
       {fileUrl ? (
         <>
-          {(isPdf(fileUrl) || isOffice(fileUrl)) ? (
+          {isPdf(fileUrl) ? (
             <div className="mb-6">
-              <iframe
-                src={getViewUrl(fileUrl)}
-                className="w-full h-[350px] sm:h-[600px] rounded-lg border border-gray-200"
-                title="Предпросмотр документа"
-              />
+              <PdfViewer url={fileUrl} />
+            </div>
+          ) : isOffice(fileUrl) ? (
+            <div className="mb-6 flex items-center gap-3 p-4 rounded-lg border border-border bg-muted/30 text-sm text-muted-foreground">
+              <FileSpreadsheet className="w-5 h-5 shrink-0" />
+              <span>Предпросмотр Office-файлов недоступен в браузере. Используйте кнопки ниже, чтобы открыть или скачать файл.</span>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground mb-6">
@@ -199,7 +198,7 @@ const DocumentPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <Button
               type="button"
-              onClick={() => window.open(getViewUrl(fileUrl), "_blank")}
+              onClick={() => window.open(fileUrl, "_blank")}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
             >
               <ExternalLink className="w-4 h-4" /> Открыть файл
