@@ -82,9 +82,9 @@ const DocumentPage = () => {
   const { docId, roleName } = useParams<{ docId: string; roleName?: string }>();
   const navigate = useNavigate();
   const { docs, loading } = usePortal();
-  const [showPreview, setShowPreview] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
+  const [summaryMeta, setSummaryMeta] = useState<{ cached?: boolean; generatedAt?: string } | null>(null);
 
   const currentIndex = docs.findIndex((d) => String(d.id) === docId);
   const prevDoc = currentIndex > 0 ? docs[currentIndex - 1] : null;
