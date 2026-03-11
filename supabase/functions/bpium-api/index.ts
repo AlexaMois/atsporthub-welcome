@@ -145,13 +145,10 @@ Deno.serve(async (req) => {
       let extractedText = '';
 
       try {
-                const PARTIAL_SIZE = 5 * 1024 * 1024; // 5MB — first chunk only
-                const fileRes = await fetch(fileUrl, { headers: { 'Range': `bytes=0-${PARTIAL_SIZE - 1}` } });
-                        if (!fileRes.ok && fileRes.status !== 206) throw new Error(`Failed to download file: ${fileRes.status}`);
+        const fileRes = await fetch(fileUrl);
+        if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
         const fileBuffer = await fileRes.arrayBuffer();
-        const fileSize = fileBuffer.byteLength;
-
-                        const isPartial = fileRes.status === 206 || fileBuffer.byteLength < PARTIAL_SIZE;
+        const isPartial = false;
         if (ext === 'pdf') {
           const pdfParse = (await import('npm:pdf-parse@1.1.1')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
