@@ -100,6 +100,11 @@ const DocumentPage = () => {
     { label: "Источник", value: extractLinkedNames(doc.source) },
   ].filter((m) => m.value);
 
+  // Теги — строка из Bpium, разбиваем по запятой
+  const tagList: string[] = doc.tags
+    ? String(doc.tags).split(',').map((t: string) => t.trim()).filter(Boolean)
+    : [];
+
   return (
     <div key={docId} className="max-w-3xl mx-auto px-6 py-8">
       <h1 className="text-4xl font-bold text-foreground mb-6 leading-tight">{doc.title}</h1>
@@ -117,6 +122,20 @@ const DocumentPage = () => {
               <span className="text-muted-foreground min-w-[120px] shrink-0">{m.label}:</span>
               <span className="text-foreground">{m.value}</span>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Теги */}
+      {tagList.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-8">
+          {tagList.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"
+            >
+              {tag}
+            </span>
           ))}
         </div>
       )}
