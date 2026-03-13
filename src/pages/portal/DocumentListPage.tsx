@@ -22,7 +22,7 @@ const DocumentListPage = () => {
 
   const {
     loading, error, retry, filteredDocs, stats, searchQuery, setSearchQuery,
-    activeFilters, toggleFilter, filterOptions,
+    activeFilters, toggleFilter, filterOptions, isAllEmployeesMode,
   } = usePortal();
 
   // For phone-auth employees, don't show role filter chips (roles come from Bpium)
@@ -65,9 +65,9 @@ const DocumentListPage = () => {
       ) : (
         <>
           <h1 className="text-3xl font-bold text-foreground mb-6">
-            {isEmployeePortal ? "Документы для вас" : "Все документы"}
+            {isEmployeePortal ? (isAllEmployeesMode ? "Все документы" : "Документы для вас") : "Все документы"}
           </h1>
-          {isDirector && (
+          {(isDirector || isAllEmployeesMode) && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {stats.map((s) => (
                 <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-primary pl-3">

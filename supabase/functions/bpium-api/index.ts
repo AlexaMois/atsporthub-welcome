@@ -481,17 +481,17 @@ Deno.serve(async (req) => {
       }
 
       // --- AI call ---
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
+      const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
+      if (!PERPLEXITY_API_KEY) throw new Error('PERPLEXITY_API_KEY not configured');
 
-      const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      const aiRes = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'sonar',
           messages: [
             {
               role: 'system',
@@ -501,16 +501,17 @@ Deno.serve(async (req) => {
               role: 'user',
               content: `Вот текст документа для анализа:\n\n${extractedText}`
             }
-          ]
+          ],
+          max_tokens: 1000
         })
       });
 
       if (!aiRes.ok) {
         const errText = await aiRes.text();
-        console.error('Lovable AI error:', aiRes.status, errText);
+        console.error('Perplexity AI error:', aiRes.status, errText);
         if (aiRes.status === 429) throw new Error('Rate limit exceeded, try again later');
         if (aiRes.status === 402) throw new Error('AI credits exhausted');
-        throw new Error('AI Gateway failed');
+        throw new Error('Perplexity API failed');
       }
 
       const aiData = await aiRes.json();
@@ -523,12 +524,12 @@ Deno.serve(async (req) => {
           summary,
           fileHash,
           generatedAt,
-          model: 'google/gemini-2.5-flash'
+          model: 'sonar'
         });
         fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records/${docId}`, {
           method: 'PATCH',
           headers: authHeaders,
-          body: JSON.stringify({ values: { [BPIUM_FIELDS.SUMMARY_CACHE]: cachePayload } })
+          body: JSON.stringify({ [BPIUM_FIELDS.SUMMARY_CACHE]: cachePayload })
         }).catch((e: unknown) => console.error('Cache write failed:', e));
       }
 
