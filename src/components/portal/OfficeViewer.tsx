@@ -2,16 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { ExternalLink, Download, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
-
 interface OfficeViewerProps {
   url: string;
   onDownload?: () => void;
 }
 
 const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
-  const isMobile = useIsMobile();
-  const [status, setStatus] = useState<"idle" | "loading" | "loaded" | "error">(isMobile ? "idle" : "loading");
+  const [status, setStatus] = useState<"idle" | "loading" | "loaded" | "error">("idle");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -22,7 +19,7 @@ const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
       // Google Viewer doesn't fire onerror reliably — timeout fallback
       timerRef.current = setTimeout(() => {
         setStatus("error");
-      }, 15000);
+      }, 8000);
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -90,7 +87,7 @@ const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
       <iframe
         ref={iframeRef}
         src={viewerUrl}
-        className="w-full h-[500px] border-0"
+        className="w-full h-[300px] border-0"
         onLoad={handleLoad}
         onError={() => setStatus("error")}
         title="Document preview"

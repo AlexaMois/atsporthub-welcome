@@ -1,5 +1,5 @@
 import { FUNC_URL, SUPABASE_ANON_KEY } from "@/lib/config";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,13 @@ const DocumentPage = () => {
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryMeta, setSummaryMeta] = useState<{ cached?: boolean; generatedAt?: string } | null>(null);
+
+  // Reset all summary state when navigating between documents
+  useEffect(() => {
+    setSummary(null);
+    setSummaryMeta(null);
+    setSummarizing(false);
+  }, [docId]);
 
   const currentIndex = docs.findIndex((d) => String(d.id) === docId);
   const prevDoc = currentIndex > 0 ? docs[currentIndex - 1] : null;

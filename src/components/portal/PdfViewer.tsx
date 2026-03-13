@@ -22,7 +22,7 @@ const PdfViewer = ({ url }: PdfViewerProps) => {
   const [error, setError] = useState(false);
   const [manualLoad, setManualLoad] = useState(isMobile);
 
-  const pageWidth = Math.min(720, (typeof window !== "undefined" ? window.innerWidth : 720) - 80);
+  const pageWidth = Math.min(500, (typeof window !== "undefined" ? window.innerWidth : 500) - 80);
 
   const handleLoadSuccess = useCallback(({ numPages: n }: { numPages: number }) => {
     setNumPages(n);
@@ -66,19 +66,21 @@ const PdfViewer = ({ url }: PdfViewerProps) => {
         loading={null}
       >
         {!error && !loading && (
-          <div className="relative">
-            {pageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            <Page
-              pageNumber={pageNumber}
-              width={pageWidth}
-              className="mx-auto"
-              onRenderSuccess={() => setPageLoading(false)}
-              loading={null}
-            />
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div className="relative">
+              {pageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              <Page
+                pageNumber={pageNumber}
+                width={pageWidth}
+                className="mx-auto"
+                onRenderSuccess={() => setPageLoading(false)}
+                loading={null}
+              />
+            </div>
           </div>
         )}
       </Document>
