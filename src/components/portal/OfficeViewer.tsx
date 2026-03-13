@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { ExternalLink, Download, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+
 interface OfficeViewerProps {
   url: string;
+  className?: string;
   onDownload?: () => void;
 }
 
-const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
+const OfficeViewer = ({ url, className, onDownload }: OfficeViewerProps) => {
   const [status, setStatus] = useState<"idle" | "loading" | "loaded" | "error">("idle");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -33,7 +35,7 @@ const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
 
   if (status === "idle") {
     return (
-      <div className="border border-border rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center h-[200px]">
+      <div className={`border border-border rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center ${className ?? 'h-[200px]'}`}>
         <Button
           variant="outline"
           onClick={() => setStatus("loading")}
@@ -48,7 +50,7 @@ const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
 
   if (status === "error") {
     return (
-      <div className="border border-border rounded-lg overflow-hidden bg-muted/30 p-6">
+      <div className={`border border-border rounded-lg overflow-hidden bg-muted/30 p-6 ${className ?? ''}`}>
         <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-8 h-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
@@ -74,7 +76,7 @@ const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden bg-muted/30 relative">
+    <div className={`border border-border rounded-lg overflow-hidden bg-muted/30 relative ${className ?? ''}`}>
       {status === "loading" && (
         <div className="absolute inset-0 z-10 p-4 space-y-3 bg-muted/30">
           <Skeleton className="h-6 w-3/4" />
@@ -87,7 +89,7 @@ const OfficeViewer = ({ url, onDownload }: OfficeViewerProps) => {
       <iframe
         ref={iframeRef}
         src={viewerUrl}
-        className="w-full h-[300px] border-0"
+        className={`w-full border-0 ${className ? 'h-full' : 'h-[300px]'}`}
         onLoad={handleLoad}
         onError={() => setStatus("error")}
         title="Document preview"

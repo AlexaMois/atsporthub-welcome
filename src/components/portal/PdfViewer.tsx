@@ -11,9 +11,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 interface PdfViewerProps {
   url: string;
+  className?: string;
 }
 
-const PdfViewer = ({ url }: PdfViewerProps) => {
+const PdfViewer = ({ url, className }: PdfViewerProps) => {
   const isMobile = useIsMobile();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
@@ -31,7 +32,7 @@ const PdfViewer = ({ url }: PdfViewerProps) => {
 
   if (manualLoad) {
     return (
-      <div className="border border-border rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center h-[200px]">
+      <div className={`border border-border rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center ${className ?? 'h-[200px]'}`}>
         <Button
           variant="outline"
           onClick={() => setManualLoad(false)}
@@ -45,7 +46,7 @@ const PdfViewer = ({ url }: PdfViewerProps) => {
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden bg-muted/30">
+    <div className={`border border-border rounded-lg overflow-hidden bg-muted/30 flex flex-col ${className ?? ''}`}>
       {loading && (
         <div className="p-4 space-y-3">
           <Skeleton className="h-6 w-3/4" />
@@ -66,7 +67,7 @@ const PdfViewer = ({ url }: PdfViewerProps) => {
         loading={null}
       >
         {!error && !loading && (
-          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          <div className="flex-1 overflow-y-auto">
             <div className="relative">
               {pageLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
@@ -92,7 +93,7 @@ const PdfViewer = ({ url }: PdfViewerProps) => {
       )}
 
       {!error && !loading && numPages > 1 && (
-        <div className="flex items-center justify-center gap-4 py-3 border-t border-border bg-background">
+        <div className="flex items-center justify-center gap-4 py-3 border-t border-border bg-background shrink-0">
           <Button
             type="button"
             variant="ghost"

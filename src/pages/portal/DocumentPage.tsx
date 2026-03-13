@@ -31,12 +31,14 @@ const DocumentPage = () => {
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryMeta, setSummaryMeta] = useState<{ cached?: boolean; generatedAt?: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'preview' | 'summary'>('preview');
 
   // Reset all summary state when navigating between documents
   useEffect(() => {
     setSummary(null);
     setSummaryMeta(null);
     setSummarizing(false);
+    setActiveTab('preview');
   }, [docId]);
 
   const currentIndex = docs.findIndex((d) => String(d.id) === docId);
@@ -113,143 +115,203 @@ const DocumentPage = () => {
     : [];
 
   return (
-    <div key={docId} className="max-w-3xl mx-auto px-6 py-8">
-      <h1 className="text-4xl font-bold text-foreground mb-6 leading-tight">{doc.title}</h1>
-      
-      <div className="flex flex-wrap items-center gap-3 mb-6 text-sm text-muted-foreground">
-        {st && <Badge className={`${st.className} border-0`}>{st.label}</Badge>}
-        {doc.date && <span>Дата: {formatDate(doc.date)}</span>}
-        {doc.version && <span>Версия: {doc.version}</span>}
-      </div>
+    <div
+      key={docId}
+      className="flex flex-col md:flex-row md:h-[calc(100vh-6.5rem)] overflow-hidden"
+    >
+      {/* Left column */}
+      <div className="w-full md:w-[420px] md:flex-shrink-0 flex flex-col md:border-r md:overflow-y-auto p-6 gap-4">
+        <h1 className="text-xl font-bold text-foreground leading-tight">{doc.title}</h1>
 
-      {meta.length > 0 && (
-        <div className="space-y-2 mb-8">
-          {meta.map((m) => (
-            <div key={m.label} className="flex gap-2 text-sm">
-              <span className="text-muted-foreground min-w-[120px] shrink-0">{m.label}:</span>
-              <span className="text-foreground">{m.value}</span>
-            </div>
-          ))}
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          {st && <Badge className={`${st.className} border-0`}>{st.label}</Badge>}
+          {doc.date && <span>Дата: {formatDate(doc.date)}</span>}
+          {doc.version && <span>Версия: {doc.version}</span>}
         </div>
-      )}
 
-      {/* Теги */}
-      {tagList.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-8">
-          {tagList.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Саммари блок */}
-      {summary && (
-        <div className="mb-8 p-5 bg-primary/5 border border-primary/20 rounded-xl relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-          <h3 className="text-primary font-semibold text-sm mb-2 flex items-center gap-2">
-            <FileText className="w-4 h-4" /> ИИ-Резюме документа
-            {summaryMeta?.cached && (
-              <span className="text-xs font-normal text-muted-foreground">(из кеша)</span>
-            )}
-          </h3>
-           <div className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-strong:text-foreground prose-ul:my-1 prose-li:my-0">
-            <ReactMarkdown>{summary}</ReactMarkdown>
+        {meta.length > 0 && (
+          <div className="space-y-2">
+            {meta.map((m) => (
+              <div key={m.label} className="flex gap-2 text-sm">
+                <span className="text-muted-foreground min-w-[120px] shrink-0">{m.label}:</span>
+                <span className="text-foreground">{m.value}</span>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* File preview */}
-      {fileUrl ? (
-        <>
-          {isPdf(fileUrl) ? (
-            <div className="mb-6">
-              <PdfViewer url={fileUrl} />
+        {tagList.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {tagList.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {fileUrl && (
+          <>
+            <Separator />
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                onClick={() => window.open(fileUrl, "_blank")}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+              >
+                <ExternalLink className="w-4 h-4" /> Открыть файл
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
+                className="w-full gap-2 hover:bg-primary hover:text-white transition-colors"
+              >
+                <Download className="w-4 h-4" /> Скачать
+              </Button>
             </div>
-          ) : isOffice(fileUrl) ? (
-            <div className="mb-6">
-              <OfficeViewer
-                url={fileUrl}
-                onDownload={() => handleDownload(fileUrl, doc.title, String(doc.id))}
-              />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-6">
-              Предпросмотр недоступен для этого типа файла.
-            </p>
-          )}
+          </>
+        )}
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <Button
-              type="button"
-              onClick={() => window.open(fileUrl, "_blank")}
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-            >
-              <ExternalLink className="w-4 h-4" /> Открыть файл
-            </Button>
-            
-            <Button
-              type="button"
-              onClick={handleSummarize}
-              disabled={summarizing}
-              variant="secondary"
-              className="w-full sm:w-auto gap-2 bg-white border border-primary/20 hover:bg-primary/5 text-primary"
-            >
-              {summarizing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <FileText className="w-4 h-4" />
-              )}
-              {summarizing ? "Создаю саммари..." : "Саммари ИИ"}
-            </Button>
+        <Separator />
 
+        {/* Prev / Next navigation */}
+        <div className="flex justify-between">
+          {prevDoc ? (
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
-              className="w-full sm:w-auto gap-2 hover:bg-primary hover:text-white transition-colors"
+              size="sm"
+              onClick={() => navigate(`${basePath}/doc/${prevDoc.id}`)}
+              className="gap-1"
             >
-              <Download className="w-4 h-4" /> Скачать
+              <ArrowLeft className="w-4 h-4" /> Предыдущий
             </Button>
-          </div>
-        </>
-      ) : (
-        <p className="text-gray-400 text-center py-8">Файл не прикреплён</p>
-      )}
+          ) : <div />}
+          {nextDoc ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
+              className="gap-1"
+            >
+              Следующий <ArrowRight className="w-4 h-4" />
+            </Button>
+          ) : <div />}
+        </div>
 
-      <Separator className="my-8" />
-      
-      <div className="text-xs text-muted-foreground mb-4">
-        Последнее обновление: {formatDate(doc.date)}
+        <div className="text-xs text-muted-foreground mt-auto pt-2">
+          Последнее обновление: {formatDate(doc.date)}
+        </div>
       </div>
 
-      {/* Prev / Next navigation */}
-      <div className="flex justify-between mt-8">
-        {prevDoc ? (
-          <Button
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col overflow-hidden min-h-[400px] md:min-h-0">
+        {/* Tab bar */}
+        <div className="flex border-b shrink-0">
+          <button
             type="button"
-            variant="outline"
-            onClick={() => navigate(`${basePath}/doc/${prevDoc.id}`)}
-            className="gap-2"
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === 'preview'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setActiveTab('preview')}
           >
-            <ArrowLeft className="w-4 h-4" /> Предыдущий
-          </Button>
-        ) : <div />}
-        
-        {nextDoc ? (
-          <Button
+            Предпросмотр
+          </button>
+          <button
             type="button"
-            variant="outline"
-            onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
-            className="gap-2"
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === 'summary'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setActiveTab('summary')}
           >
-            Следующий <ArrowRight className="w-4 h-4" />
-          </Button>
-        ) : <div />}
+            Саммари ИИ
+          </button>
+        </div>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-hidden">
+          {activeTab === 'preview' && (
+            <div className="h-full overflow-y-auto">
+              {fileUrl ? (
+                <>
+                  {isPdf(fileUrl) ? (
+                    <PdfViewer url={fileUrl} className="h-full" />
+                  ) : isOffice(fileUrl) ? (
+                    <OfficeViewer
+                      url={fileUrl}
+                      className="h-full"
+                      onDownload={() => handleDownload(fileUrl, doc.title, String(doc.id))}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-sm text-muted-foreground">
+                        Предпросмотр недоступен для этого типа файла.
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400">Файл не прикреплён</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'summary' && (
+            <div className="h-full overflow-y-auto">
+              {!summary && !summarizing && (
+                <div className="flex items-center justify-center h-full">
+                  <Button
+                    type="button"
+                    onClick={handleSummarize}
+                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    <FileText className="w-4 h-4" /> Создать саммари ИИ
+                  </Button>
+                </div>
+              )}
+
+              {summarizing && (
+                <div className="flex flex-col items-center justify-center h-full gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Создаю саммари...</p>
+                </div>
+              )}
+
+              {summary && (
+                <div className="p-6">
+                  <div className="p-5 bg-primary/5 border border-primary/20 rounded-xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                    <h3 className="text-primary font-semibold text-sm mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> ИИ-Резюме документа
+                      {summaryMeta?.cached && (
+                        <span className="text-xs font-normal text-muted-foreground">(из кеша)</span>
+                      )}
+                    </h3>
+                    <div className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-strong:text-foreground prose-ul:my-1 prose-li:my-0">
+                      <ReactMarkdown>{summary}</ReactMarkdown>
+                    </div>
+                  </div>
+                  {summaryMeta?.generatedAt && (
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Сгенерировано: {summaryMeta.generatedAt}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
