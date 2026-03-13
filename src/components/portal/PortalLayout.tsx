@@ -119,7 +119,7 @@ export default function PortalLayout() {
               </div>
             )}
             <PortalBreadcrumb />
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <Outlet />
             </div>
           </SidebarInset>

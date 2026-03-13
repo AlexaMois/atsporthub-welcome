@@ -116,45 +116,48 @@ const DocumentPage = () => {
   return (
     <div
       key={docId}
-      className="flex flex-col md:flex-row md:h-[calc(100vh-6.5rem)] overflow-hidden"
+      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden"
     >
       {/* Left column */}
-      <div className="w-full md:w-1/2 flex flex-col md:border-r md:overflow-y-auto p-6 gap-4">
-        <h1 className="text-xl font-bold text-foreground leading-tight">{doc.title}</h1>
+      <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink">
+        {/* Scrollable metadata area */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 pb-2 space-y-4">
+          <h1 className="text-xl font-bold text-foreground leading-tight">{doc.title}</h1>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          {st && <Badge className={`${st.className} border-0`}>{st.label}</Badge>}
-          {doc.date && <span>Дата: {formatDate(doc.date)}</span>}
-          {doc.version && <span>Версия: {doc.version}</span>}
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            {st && <Badge className={`${st.className} border-0`}>{st.label}</Badge>}
+            {doc.date && <span>Дата: {formatDate(doc.date)}</span>}
+            {doc.version && <span>Версия: {doc.version}</span>}
+          </div>
+
+          {meta.length > 0 && (
+            <div className="space-y-2">
+              {meta.map((m) => (
+                <div key={m.label} className="flex gap-2 text-sm">
+                  <span className="text-muted-foreground min-w-[120px] shrink-0">{m.label}:</span>
+                  <span className="text-foreground">{m.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tagList.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tagList.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {meta.length > 0 && (
-          <div className="space-y-2">
-            {meta.map((m) => (
-              <div key={m.label} className="flex gap-2 text-sm">
-                <span className="text-muted-foreground min-w-[120px] shrink-0">{m.label}:</span>
-                <span className="text-foreground">{m.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tagList.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {tagList.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {fileUrl && (
-          <>
-            <Separator />
+        {/* Sticky bottom actions — always visible */}
+        <div className="p-6 pt-3 border-t space-y-3 shrink-0">
+          {fileUrl && (
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
@@ -172,39 +175,39 @@ const DocumentPage = () => {
                 <Download className="w-4 h-4" /> Скачать
               </Button>
             </div>
-          </>
-        )}
+          )}
 
-        <Separator />
+          <Separator />
 
-        {/* Prev / Next navigation */}
-        <div className="flex justify-between">
-          {prevDoc ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`${basePath}/doc/${prevDoc.id}`)}
-              className="gap-1"
-            >
-              <ArrowLeft className="w-4 h-4" /> Предыдущий
-            </Button>
-          ) : <div />}
-          {nextDoc ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
-              className="gap-1"
-            >
-              Следующий <ArrowRight className="w-4 h-4" />
-            </Button>
-          ) : <div />}
-        </div>
+          {/* Prev / Next navigation */}
+          <div className="flex justify-between">
+            {prevDoc ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`${basePath}/doc/${prevDoc.id}`)}
+                className="gap-1"
+              >
+                <ArrowLeft className="w-4 h-4" /> Предыдущий
+              </Button>
+            ) : <div />}
+            {nextDoc ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
+                className="gap-1"
+              >
+                Следующий <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : <div />}
+          </div>
 
-        <div className="text-xs text-muted-foreground mt-auto pt-2">
-          Последнее обновление: {formatDate(doc.date)}
+          <div className="text-xs text-muted-foreground pt-1">
+            Последнее обновление: {formatDate(doc.date)}
+          </div>
         </div>
       </div>
 
