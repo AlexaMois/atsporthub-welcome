@@ -31,8 +31,13 @@ const PasswordPage = () => {
       });
 
       if (res.status === 200) {
-        sessionStorage.setItem("director_auth", "true");
+        const data = await res.json();
+        if (data.token) {
+          sessionStorage.setItem("director_token", data.token);
+        }
         navigate("/dashboard/director");
+      } else if (res.status === 429) {
+        setError("Слишком много попыток. Подождите 15 минут.");
       } else if (res.status === 401) {
         setError("Неверный пароль");
       } else {

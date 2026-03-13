@@ -73,17 +73,17 @@ export default function PortalLayout() {
   }, [showWelcome]);
 
   useEffect(() => {
-    if (!isEmployee && sessionStorage.getItem("director_auth") !== "true") {
+    if (!isEmployee && !sessionStorage.getItem("director_token")) {
       navigate("/login/director", { replace: true });
     }
   }, [navigate, isEmployee]);
 
-  if (!isEmployee && sessionStorage.getItem("director_auth") !== "true") {
+  if (!isEmployee && !sessionStorage.getItem("director_token")) {
     return null;
   }
 
   const handleLogout = () => {
-    sessionStorage.removeItem("director_auth");
+    sessionStorage.removeItem("director_token");
     navigate("/");
   };
 

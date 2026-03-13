@@ -1,29 +1,52 @@
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 
-/**
- * ProtectedRoute — закрывает маршрут для неавторизованных пользователей.
- * Проверяет наличие флага в sessionStorage, установленного после ввода пароля.
- *
- * NOTE: Это клиентская защита от случайного перехода.
- * Для production рекомендуется перенести аутентификацию на Supabase Auth.
- */
+const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  storageKey?: string;
   redirectTo?: string;
 }
 
 const ProtectedRoute = ({
   children,
-  storageKey = "director_auth",
   redirectTo = "/login/director",
 }: ProtectedRouteProps) => {
-  const isAuthenticated = sessionStorage.getItem(storageKey) === "true";
+  const [status, setStatus] = useState<"loading" | "valid" | "invalid">("loading");
 
-  if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
-  }
+  useEffect(() => {
+    const token = sessionStorage.getItem("director_token");
+    if (!token) {
+      setStatus("invalid");
+      return;
+    }
 
+    fetch(`${FUNC_URL}?action=verify-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: ANON_KEY,
+      },
+      body: JSON.stringify({ token }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.valid) {
+          setStatus("valid");
+        } else {
+          sessionStorage.removeItem("director_token");
+          setStatus("invalid");
+        }
+      })
+      .catch(() => {
+        // Network error — allow access if token exists (graceful degradation)
+        setStatus("valid");
+      });
+  }, []);
+
+  if (status === "loading") return null;
+  if (status === "invalid") return <Navigate to={redirectTo} replace />;
   return <>{children}</>;
 };
 
