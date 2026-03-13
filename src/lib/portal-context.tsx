@@ -16,6 +16,13 @@ import { FUNC_URL, SUPABASE_ANON_KEY as ANON_KEY } from "@/lib/config";
 // Роль "Все сотрудники" — специальное значение, означает "показать всё"
 const ALL_EMPLOYEES_ROLE = "Все сотрудники";
 
+// Привилегированные роли — видят ВСЕ документы без фильтрации по роли
+const PRIVILEGED_ROLES = [
+  "генеральный директор",
+  "начальник участка / руководитель проекта",
+  "все сотрудники",
+];
+
 const fetchAction = async (action: string) => {
   const res = await fetch(`${FUNC_URL}?action=${action}`, {
     headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
@@ -102,8 +109,10 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
     source: new Set(),
   });
 
-  // Флаг: роль "Все сотрудники" = показываем все документы без фильтра по роли
-  const isAllEmployeesMode = roleName?.toLowerCase() === ALL_EMPLOYEES_ROLE.toLowerCase();
+  // Флаг: привилегированная роль = показываем все документы без фильтра по роли
+  const isAllEmployeesMode =
+    roleName?.toLowerCase() === ALL_EMPLOYEES_ROLE.toLowerCase() ||
+    (userRoles?.some((ur) => PRIVILEGED_ROLES.includes(ur.toLowerCase())) ?? false);
 
   const load = async () => {
     setLoading(true);
