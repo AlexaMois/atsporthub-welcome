@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -22,8 +22,10 @@ const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
 
 const DocumentPage = () => {
-  const { docId, roleName } = useParams<{ docId: string; roleName?: string }>();
+  const { docId } = useParams<{ docId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/portal") ? "/portal" : "/dashboard/director";
   const { docs, loading } = usePortal();
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -197,10 +199,7 @@ const DocumentPage = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(roleName 
-              ? `/role/${encodeURIComponent(roleName)}/doc/${prevDoc.id}` 
-              : `/dashboard/director/doc/${prevDoc.id}`
-            )}
+            onClick={() => navigate(`${basePath}/doc/${prevDoc.id}`)}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" /> Предыдущий
@@ -211,10 +210,7 @@ const DocumentPage = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(roleName 
-              ? `/role/${encodeURIComponent(roleName)}/doc/${nextDoc.id}` 
-              : `/dashboard/director/doc/${nextDoc.id}`
-            )}
+            onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
             className="gap-2"
           >
             Следующий <ArrowRight className="w-4 h-4" />

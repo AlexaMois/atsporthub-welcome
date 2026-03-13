@@ -11,12 +11,11 @@ import { usePortal } from "@/lib/portal-context";
 
 export function PortalBreadcrumb() {
   const location = useLocation();
-  const { docId, roleName } = useParams<{ docId?: string; roleName?: string }>();
+  const { docId } = useParams<{ docId?: string }>();
   const { docs } = usePortal();
 
-  const basePath = roleName
-    ? `/role/${encodeURIComponent(roleName)}`
-    : `/dashboard/director`;
+  const isEmployeePortal = location.pathname.startsWith("/portal");
+  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
 
   const isDocPage = !!docId && location.pathname.includes("/doc/");
   const docTitle = isDocPage

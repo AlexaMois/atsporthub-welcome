@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate, useParams, Link } from "react-router-dom";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
@@ -12,7 +12,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-function PortalHeader({ onLogout, roleName }: { onLogout: () => void; roleName?: string }) {
+function PortalHeader({ onLogout, displayName, roleName }: { onLogout: () => void; displayName?: string; roleName?: string }) {
   const { toggleSidebar } = useSidebar();
   return (
     <header className="h-14 bg-primary flex items-center justify-between px-4 shrink-0">
@@ -30,31 +30,21 @@ function PortalHeader({ onLogout, roleName }: { onLogout: () => void; roleName?:
         <span className="text-white font-semibold text-sm">АТС Портал</span>
       </div>
       <div className="flex items-center gap-3">
-        {roleName ? (
-          <>
-            <span className="text-white text-sm opacity-80 hidden md:inline">{roleName}</span>
-            <Link
-              to="/"
-              className="text-white hover:bg-white/20 inline-flex items-center gap-1 text-sm px-2 py-1 rounded"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">К выбору роли</span>
-            </Link>
-          </>
-        ) : (
-          <>
-            <span className="text-white text-sm opacity-80 hidden md:inline">Генеральный директор</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/20 gap-1"
-              onClick={onLogout}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Выйти</span>
-            </Button>
-          </>
+        {displayName && (
+          <span className="text-white text-sm opacity-80 hidden md:inline">{displayName}</span>
         )}
+        {roleName && (
+          <span className="text-white/60 text-xs hidden lg:inline">{roleName}</span>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white hover:bg-white/20 gap-1"
+          onClick={onLogout}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Выйти</span>
+        </Button>
       </div>
     </header>
   );
@@ -99,7 +89,7 @@ export default function PortalLayout() {
         <div className="min-h-screen flex w-full bg-background">
           <PortalSidebar roleName={roleName} />
           <SidebarInset>
-            <PortalHeader onLogout={handleLogout} roleName={displayName || roleName} />
+            <PortalHeader onLogout={handleLogout} displayName={displayName} roleName={isUserSession && userRoles.length > 0 ? userRoles.join(", ") : undefined} />
             {showWelcome && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>

@@ -64,7 +64,9 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
-  const isDocListPage = location.pathname === "/dashboard/director";
+  const isEmployeePortal = location.pathname.startsWith("/portal");
+  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
+  const isDocListPage = location.pathname === basePath;
   const noFiltersActive = Object.values(activeFilters).every(s => s.size === 0);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -76,13 +78,13 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
 
   const handleAllDocs = () => {
     clearFilters();
-    if (!isDocListPage) navigate("/dashboard/director");
+    if (!isDocListPage) navigate(basePath);
     if (isMobile) setOpenMobile(false);
   };
 
   const handleItemClick = (group: string, itemId: string) => {
     setExclusiveFilter(group, itemId);
-    if (!isDocListPage) navigate("/dashboard/director");
+    if (!isDocListPage) navigate(basePath);
     if (isMobile) setOpenMobile(false);
   };
 
@@ -110,7 +112,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
 
         {/* Filter groups */}
         {FILTER_GROUPS.map((g) => {
-          if (roleName && g.key === "roles") return null;
+          if ((roleName || isEmployeePortal) && g.key === "roles") return null;
           const items = filterOptions[g.key] || [];
           if (items.length === 0) return null;
           const Icon = GROUP_ICONS[g.key] || FileText;

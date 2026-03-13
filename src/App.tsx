@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import UserProtectedRoute from "@/components/UserProtectedRoute";
 
-const Index = lazy(() => import("./pages/Index"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const PasswordPage = lazy(() => import("./pages/PasswordPage"));
 const PortalLayout = lazy(() => import("./components/portal/PortalLayout"));
@@ -23,7 +22,7 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            {/* Страница выбора роли — теперь редирект на /login */}
+            {/* Вход по телефону */}
             <Route path="/" element={<LoginPage />} />
             <Route path="/login" element={<LoginPage />} />
 

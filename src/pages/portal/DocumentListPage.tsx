@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Loader2, Eye, Search, X, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,14 +15,20 @@ interface LinkedObj {
 }
 
 const DocumentListPage = () => {
-  const { roleName } = useParams<{ roleName?: string }>();
+  const location = useLocation();
+  const isEmployeePortal = location.pathname.startsWith("/portal");
+  const isDirector = location.pathname.startsWith("/dashboard/director");
+  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
+
   const {
     loading, error, retry, filteredDocs, stats, searchQuery, setSearchQuery,
     activeFilters, toggleFilter, filterOptions,
   } = usePortal();
 
+  // For phone-auth employees, don't show role filter chips (roles come from Bpium)
   const activeChips: { group: string; itemId: string; name: string }[] = [];
   for (const g of FILTER_GROUPS) {
+    if (isEmployeePortal && g.key === "roles") continue;
     const sel = activeFilters[g.key];
     if (sel) {
       sel.forEach((id) => {
@@ -59,9 +65,9 @@ const DocumentListPage = () => {
       ) : (
         <>
           <h1 className="text-3xl font-bold text-foreground mb-6">
-            {roleName ? "Документы для вас" : "Все документы"}
+            {isEmployeePortal ? "Документы для вас" : "Все документы"}
           </h1>
-          {!roleName && (
+          {isDirector && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {stats.map((s) => (
                 <div key={s.label} className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border-l-4 border-primary pl-3">
@@ -112,10 +118,7 @@ const DocumentListPage = () => {
               return (
                 <div key={doc.id} className="py-4 border-b border-gray-100 hover:bg-gray-50 group relative flex items-start justify-between gap-2">
                   <Link
-                    to={roleName
-                      ? `/role/${encodeURIComponent(roleName)}/doc/${doc.id}`
-                      : `/dashboard/director/doc/${doc.id}`
-                    }
+                    to={`${basePath}/doc/${doc.id}`}
                     className="flex-1 min-w-0"
                   >
                     <p className="text-[15px] sm:text-sm font-medium text-foreground group-hover:text-primary line-clamp-2 transition-colors">
@@ -135,7 +138,7 @@ const DocumentListPage = () => {
                     {st && <Badge className={`${st.className} border-0 text-xs`}>{st.label}</Badge>}
                     {url && (
                       <Link
-              to={roleName ? `/role/${encodeURIComponent(roleName)}/doc/${doc.id}` : `/dashboard/director/doc/${doc.id}`}
+              to={`${basePath}/doc/${doc.id}`}
               onClick={(e) => e.stopPropagation()}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
