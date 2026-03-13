@@ -1,7 +1,16 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
-};
+const ALLOWED_ORIGINS = [
+  'https://portal.atslogistik.ru',
+  'https://atsporthub-welcome.lovable.app',
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
+  };
+}
 
 const BASE_URL = 'https://neiroresheniya.bpium.ru';
 
@@ -28,6 +37,103 @@ const CATALOG = {
   DIRECTIONS: '55',
   SOURCES: '59',
 } as const;
+
+// --- Rate limiting for password checks ---
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_FAILED_ATTEMPTS = 5;
+const failedAttempts = new Map<string, { count: number; firstAttempt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const entry = failedAttempts.get(ip);
+  if (!entry) return false;
+  if (Date.now() - entry.firstAttempt > RATE_LIMIT_WINDOW_MS) {
+    failedAttempts.delete(ip);
+    return false;
+  }
+  return entry.count >= MAX_FAILED_ATTEMPTS;
+}
+
+function recordFailedAttempt(ip: string): void {
+  const entry = failedAttempts.get(ip);
+  const now = Date.now();
+  if (!entry || now - entry.firstAttempt > RATE_LIMIT_WINDOW_MS) {
+    failedAttempts.set(ip, { count: 1, firstAttempt: now });
+  } else {
+    entry.count++;
+  }
+}
+
+// --- Timing-safe password comparison ---
+async function timingSafeCompare(a: string, b: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const aBuf = encoder.encode(a);
+  const bBuf = encoder.encode(b);
+  if (aBuf.length !== bBuf.length) {
+    // Compare against self to spend constant time, then return false
+    await crypto.subtle.timingSafeEqual(aBuf, aBuf);
+    return false;
+  }
+  return crypto.subtle.timingSafeEqual(aBuf, bBuf);
+}
+
+// --- JWT helpers ---
+async function getJwtKey(): Promise<CryptoKey> {
+  const secret = Deno.env.get('JWT_SECRET') || '';
+  const enc = new TextEncoder();
+  return crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify'],
+  );
+}
+
+function base64url(buf: ArrayBuffer | Uint8Array): string {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function createJwt(payload: Record<string, unknown>): Promise<string> {
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));
+  const body = base64url(new TextEncoder().encode(JSON.stringify(payload)));
+  const data = `${header}.${body}`;
+  const key = await getJwtKey();
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return `${data}.${base64url(sig)}`;
+}
+
+async function verifyJwt(token: string): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return { valid: false };
+    const key = await getJwtKey();
+    const data = `${parts[0]}.${parts[1]}`;
+
+    // Decode signature
+    const sigB64 = parts[2].replace(/-/g, '+').replace(/_/g, '/');
+    const sigBin = atob(sigB64);
+    const sigBuf = new Uint8Array(sigBin.length);
+    for (let i = 0; i < sigBin.length; i++) sigBuf[i] = sigBin.charCodeAt(i);
+
+    const valid = await crypto.subtle.verify('HMAC', key, sigBuf, new TextEncoder().encode(data));
+    if (!valid) return { valid: false };
+
+    const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(payloadB64));
+
+    // Check expiration
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return { valid: false };
+    }
+
+    return { valid: true, payload };
+  } catch {
+    return { valid: false };
+  }
+}
 
 const extractName = (val: any): string => {
   if (!val) return '';
@@ -56,7 +162,29 @@ const fetchAllPages = async (url: string, authHeaders: Record<string, string>): 
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    const origin = req.headers.get('Origin') || '';
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
+          'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+    return new Response(null, { status: 403 });
+  }
+
+  const corsHeaders = getCorsHeaders(req);
+
+  // Block requests from disallowed origins
+  const origin = req.headers.get('Origin') || '';
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -65,6 +193,17 @@ Deno.serve(async (req) => {
 
     // action: check-password
     if (action === 'check-password') {
+      const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || req.headers.get('cf-connecting-ip')
+        || 'unknown';
+
+      if (isRateLimited(clientIp)) {
+        return new Response(JSON.stringify({ ok: false, error: 'rate_limited' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const body = await req.json();
       const submitted = body?.password ?? '';
       const expected = Deno.env.get('VITE_DIRECTOR_PASSWORD') ?? '';
@@ -76,9 +215,37 @@ Deno.serve(async (req) => {
         });
       }
 
-      const ok = submitted === expected;
-      return new Response(JSON.stringify({ ok }), {
-        status: ok ? 200 : 401,
+      const ok = await timingSafeCompare(submitted, expected);
+
+      if (!ok) {
+        recordFailedAttempt(clientIp);
+        return new Response(JSON.stringify({ ok: false }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Generate JWT token on successful auth
+      const now = Math.floor(Date.now() / 1000);
+      const token = await createJwt({
+        sub: 'director',
+        iat: now,
+        exp: now + 8 * 60 * 60, // 8 hours
+      });
+
+      return new Response(JSON.stringify({ ok: true, token }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // action: verify-token
+    if (action === 'verify-token') {
+      const body = await req.json();
+      const token = body?.token ?? '';
+      const result = await verifyJwt(token);
+      return new Response(JSON.stringify({ valid: result.valid }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -180,7 +347,13 @@ Deno.serve(async (req) => {
           const pdfParse = (await import('pdf-parse')).default;
           const result = await pdfParse(new Uint8Array(fileBuffer));
           extractedText = result.text || '';
-        } else if (ext === 'docx' || ext === 'doc') {
+        } else if (ext === 'doc') {
+          // .doc is OLE2 binary format, not supported by JSZip
+          return new Response(JSON.stringify({ error: 'Формат .doc не поддерживается. Пожалуйста, сохраните файл как .docx.' }), {
+            status: 415,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } else if (ext === 'docx') {
           const JSZip = (await import('jszip')).default;
           const zip = await JSZip.loadAsync(fileBuffer);
           const docXml = await zip.file('word/document.xml')?.async('string');
@@ -318,6 +491,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
+    const corsHeaders = getCorsHeaders(req);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
