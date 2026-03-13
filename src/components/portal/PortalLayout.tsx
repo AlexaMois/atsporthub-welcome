@@ -62,42 +62,50 @@ function PortalHeader({ onLogout, roleName }: { onLogout: () => void; roleName?:
 
 export default function PortalLayout() {
   const navigate = useNavigate();
-  const { roleName } = useParams<{ roleName?: string }>();
-  const isEmployee = Boolean(roleName);
-  const [showWelcome, setShowWelcome] = useState(() => !isEmployee && sessionStorage.getItem("welcome_shown") !== "true");
+  const { roleName: roleNameParam } = useParams<{ roleName?: string }>();
+
+  // Определяем режим: директор, обычный сотрудник или старый role-маршрут
+  const isDirector = Boolean(sessionStorage.getItem("director_token"));
+  const userToken = sessionStorage.getItem("user_token");
+  const userFio = sessionStorage.getItem("user_fio") ?? "";
+  const userRoles: string[] = JSON.parse(sessionStorage.getItem("user_roles") ?? "[]");
+
+  // roleName: из URL (старый маршрут) или первая роль сотрудника
+  const roleName = roleNameParam ?? (userRoles.length === 1 ? userRoles[0] : undefined);
+
+  const isUserSession = Boolean(userToken);
+  const displayName = isDirector ? "Генеральный директор" : userFio;
+
+  const [showWelcome, setShowWelcome] = useState(
+    () => sessionStorage.getItem("welcome_shown") !== "true"
+  );
 
   useEffect(() => {
-    if (showWelcome) {
-      sessionStorage.setItem("welcome_shown", "true");
-    }
+    if (showWelcome) sessionStorage.setItem("welcome_shown", "true");
   }, [showWelcome]);
-
-  useEffect(() => {
-    if (!isEmployee && !sessionStorage.getItem("director_token")) {
-      navigate("/login/director", { replace: true });
-    }
-  }, [navigate, isEmployee]);
-
-  if (!isEmployee && !sessionStorage.getItem("director_token")) {
-    return null;
-  }
 
   const handleLogout = () => {
     sessionStorage.removeItem("director_token");
-    navigate("/");
+    sessionStorage.removeItem("user_token");
+    sessionStorage.removeItem("user_fio");
+    sessionStorage.removeItem("user_roles");
+    sessionStorage.removeItem("welcome_shown");
+    navigate("/login");
   };
 
   return (
-    <PortalProvider roleName={roleName}>
+    <PortalProvider roleName={roleName} userRoles={isUserSession ? userRoles : undefined}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <PortalSidebar roleName={roleName} />
           <SidebarInset>
-            <PortalHeader onLogout={handleLogout} roleName={roleName} />
-            {showWelcome && !isEmployee && (
+            <PortalHeader onLogout={handleLogout} roleName={displayName || roleName} />
+            {showWelcome && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-foreground">Добрый день!</p>
+                  <p className="font-semibold text-foreground">
+                    {displayName ? `Добрый день, ${displayName.split(" ")[0]}!` : "Добрый день!"}
+                  </p>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {new Date().toLocaleDateString("ru-RU", {
                       weekday: "long",

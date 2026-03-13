@@ -90,7 +90,7 @@ export const usePortal = () => {
   return ctx;
 };
 
-export const PortalProvider = ({ children, roleName }: { children: ReactNode; roleName?: string }) => {
+export const PortalProvider = ({ children, roleName, userRoles }: { children: ReactNode; roleName?: string; userRoles?: string[] }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [docs, setDocs] = useState<any[]>([]);
@@ -139,17 +139,30 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
   useEffect(() => { load(); }, []);
 
   // Auto-apply role filter for employee view
-  // ИСКЛЮЧЕНИЕ: "Все сотрудники" — не применяем фильтр, показываем все документы
+  // userRoles — массив ролей из Bpium (вход по телефону)
+  // roleName — одиночная роль из URL (старый маршрут)
   useEffect(() => {
-    if (!roleName || !filterOptions.roles?.length) return;
-    if (isAllEmployeesMode) return; // Все сотрудники = без фильтра по роли
-    const match = filterOptions.roles.find(
-      (r) => r.name.toLowerCase() === roleName.toLowerCase()
-    );
-    if (match) {
-      setExclusiveFilter("roles", match.id);
+    if (!filterOptions.roles?.length) return;
+    if (isAllEmployeesMode) return;
+
+    if (userRoles && userRoles.length > 0) {
+      // Пользователь вошёл по телефону — показываем документы по всем его ролям
+      const matchedIds = filterOptions.roles
+        .filter((r) => userRoles.some((ur) => ur.toLowerCase() === r.name.toLowerCase()))
+        .map((r) => r.id);
+      if (matchedIds.length > 0) {
+        setActiveFilters((prev) => ({ ...prev, roles: new Set(matchedIds) }));
+      }
+      return;
     }
-  }, [filterOptions.roles, roleName, isAllEmployeesMode]);
+
+    if (roleName) {
+      const match = filterOptions.roles.find(
+        (r) => r.name.toLowerCase() === roleName.toLowerCase()
+      );
+      if (match) setExclusiveFilter("roles", match.id);
+    }
+  }, [filterOptions.roles, roleName, userRoles, isAllEmployeesMode]);
 
   const stats = useMemo(() => {
     const now = new Date();

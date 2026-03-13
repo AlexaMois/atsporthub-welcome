@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import UserProtectedRoute from "@/components/UserProtectedRoute";
 
 const Index = lazy(() => import("./pages/Index"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 const PasswordPage = lazy(() => import("./pages/PasswordPage"));
 const PortalLayout = lazy(() => import("./components/portal/PortalLayout"));
 const DocumentListPage = lazy(() => import("./pages/portal/DocumentListPage"));
@@ -21,10 +23,27 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/" element={<Index />} />
+            {/* Страница выбора роли — теперь редирект на /login */}
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Вход для директора по паролю */}
             <Route path="/login/director" element={<PasswordPage />} />
 
-            {/* Маршруты для директора — защищены ProtectedRoute */}
+            {/* Портал для обычных сотрудников — защищён проверкой телефона */}
+            <Route
+              path="/portal"
+              element={
+                <UserProtectedRoute>
+                  <PortalLayout />
+                </UserProtectedRoute>
+              }
+            >
+              <Route index element={<DocumentListPage />} />
+              <Route path="doc/:docId" element={<DocumentPage />} />
+            </Route>
+
+            {/* Портал для директора — защищён JWT паролем */}
             <Route
               path="/dashboard/director"
               element={
@@ -33,12 +52,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route index element={<DocumentListPage />} />
-              <Route path="doc/:docId" element={<DocumentPage />} />
-            </Route>
-
-            {/* Обычный портал по роли */}
-            <Route path="/role/:roleName" element={<PortalLayout />}>
               <Route index element={<DocumentListPage />} />
               <Route path="doc/:docId" element={<DocumentPage />} />
             </Route>

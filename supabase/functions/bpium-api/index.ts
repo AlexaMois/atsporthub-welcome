@@ -263,6 +263,82 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
+    // action: verify-user — поиск по номеру телефона в каталоге Пользователи АТС
+    if (action === 'verify-user') {
+      const body = await req.json();
+      const rawPhone: string = (body?.phone ?? '').replace(/[\s\-().]/g, '');
+      if (!rawPhone) {
+        return new Response(JSON.stringify({ ok: false, error: 'no_phone' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Получаем всех пользователей из каталога 64 (Пользователи АТС)
+      const usersRes = await fetch(
+        `${BASE_URL}/api/v1/catalogs/64/records?count=500`,
+        { headers: authHeaders }
+      );
+      if (!usersRes.ok) {
+        return new Response(JSON.stringify({ ok: false, error: 'bpium_error' }), {
+          status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const users = await usersRes.json();
+
+      // Ищем пользователя по номеру телефона (нормализуем оба)
+      const normalize = (p: string) => p.replace(/[\s\-().+]/g, '').replace(/^8/, '7');
+      const normalizedInput = normalize(rawPhone);
+
+      const found = users.find((u: any) => {
+        const phones: any[] = u.values?.phone ?? [];
+        return phones.some((p: any) => normalize(p.contact ?? '') === normalizedInput);
+      });
+
+      if (!found) {
+        return new Response(JSON.stringify({ ok: false, error: 'not_found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Проверяем статус: ['1'] = Активен, ['2'] = Уволен, ['3'] = Заблокирован
+      const statusArr: string[] = found.values?.status ?? [];
+      const statusCode = statusArr[0] ?? '';
+      if (statusCode !== '1') {
+        const reason = statusCode === '2' ? 'fired' : statusCode === '3' ? 'blocked' : 'inactive';
+        return new Response(JSON.stringify({ ok: false, error: reason }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Собираем роли пользователя
+      const roles: string[] = (found.values?.roles ?? []).map((r: any) => r.recordTitle).filter(Boolean);
+      const fio: string = found.values?.fio ?? found.title ?? '';
+
+      // Генерируем JWT с данными пользователя
+      const now = Math.floor(Date.now() / 1000);
+      const token = await createJwt({
+        sub: found.id,
+        fio,
+        roles,
+        iat: now,
+        exp: now + 12 * 60 * 60, // 12 часов
+      });
+
+      // Обновляем last_login в Bpium
+      fetch(
+        `${BASE_URL}/api/v1/catalogs/64/records/${found.id}`,
+        {
+          method: 'PATCH',
+          headers: authHeaders,
+          body: JSON.stringify({ values: { last_login: new Date().toISOString() } }),
+        }
+      ).catch(() => {/* не блокируем ответ */});
+
+      return new Response(JSON.stringify({ ok: true, token, fio, roles }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // action: summarize
     if (action === 'summarize') {
       const body = await req.json();
