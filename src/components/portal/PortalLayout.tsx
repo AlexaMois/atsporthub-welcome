@@ -64,7 +64,7 @@ export default function PortalLayout() {
   const roleName = roleNameParam ?? (userRoles.length === 1 ? userRoles[0] : undefined);
 
   const isUserSession = Boolean(userToken);
-  const displayName = isDirector ? "Генеральный директор" : userFio;
+  const displayName = userFio || (isDirector ? "Директор" : "");
 
   const [showWelcome, setShowWelcome] = useState(
     () => sessionStorage.getItem("welcome_shown") !== "true"
@@ -94,7 +94,12 @@ export default function PortalLayout() {
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-foreground">
-                    {displayName ? `Добрый день, ${displayName.split(" ")[0]}!` : "Добрый день!"}
+                    {displayName ? `Добрый день, ${(() => {
+                      const parts = displayName.trim().split(/\s+/);
+                      if (parts.length >= 3) return `${parts[1]} ${parts[2]}`;
+                      if (parts.length === 2) return parts[1];
+                      return parts[0];
+                    })()}!` : "Добрый день!"}
                   </p>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {new Date().toLocaleDateString("ru-RU", {

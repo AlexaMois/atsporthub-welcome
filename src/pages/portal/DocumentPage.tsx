@@ -36,7 +36,7 @@ const DocumentPage = () => {
   const prevDoc = currentIndex > 0 ? docs[currentIndex - 1] : null;
   const nextDoc = currentIndex >= 0 && currentIndex < docs.length - 1 ? docs[currentIndex + 1] : null;
 
-  if (loading) {
+  if (loading && docs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-8">
         <p className="text-muted-foreground text-sm">Загрузка...</p>
@@ -74,6 +74,14 @@ const DocumentPage = () => {
 
       if (!res.ok) throw new Error("Summarization failed");
       const data = await res.json();
+      if (data.error && !data.summary) {
+        toast.error(data.error);
+        return;
+      }
+      if (!data.summary) {
+        toast.error("Саммари не создано — пустой ответ.");
+        return;
+      }
       setSummary(data.summary);
       setSummaryMeta({ cached: data.cached, generatedAt: data.generatedAt });
       toast.success(data.cached ? "Саммари загружено из кеша" : "Саммари готово!");
@@ -93,7 +101,7 @@ const DocumentPage = () => {
   ].filter((m) => m.value);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div key={docId} className="max-w-3xl mx-auto px-6 py-8">
       <h1 className="text-4xl font-bold text-foreground mb-6 leading-tight">{doc.title}</h1>
       
       <div className="flex flex-wrap items-center gap-3 mb-6 text-sm text-muted-foreground">

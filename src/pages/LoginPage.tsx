@@ -87,7 +87,7 @@ const LoginPage = () => {
         </form>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Если ваш номер не принят — обратитесь к руководителю
+          Если ваш номер не принят — обратитесь к непосредственному руководителю
         </p>
       </div>
     </div>

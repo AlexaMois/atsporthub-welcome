@@ -210,8 +210,17 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
 
   const filteredDocs = useMemo(() => {
     return docs.filter((doc) => {
-      // Фильтр по поиску (работает всегда)
-      if (searchQuery && !doc.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      // Фильтр по поиску (по названию и тегам)
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const inTitle = doc.title?.toLowerCase().includes(q);
+        const inTags = typeof doc.tags === 'string'
+          ? doc.tags.toLowerCase().includes(q)
+          : Array.isArray(doc.tags)
+          ? doc.tags.some((t: any) => String(t).toLowerCase().includes(q))
+          : false;
+        if (!inTitle && !inTags) return false;
+      }
 
       // Если режим "Все сотрудники" — фильтр по роли не применяем, остальные фильтры работают
       for (const g of FILTER_GROUPS) {
