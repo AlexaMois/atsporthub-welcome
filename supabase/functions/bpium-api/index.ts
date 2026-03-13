@@ -529,7 +529,7 @@ Deno.serve(async (req) => {
         fetch(`${BASE_URL}/api/v1/catalogs/${CATALOG.DOCUMENTS}/records/${docId}`, {
           method: 'PATCH',
           headers: authHeaders,
-          body: JSON.stringify({ [BPIUM_FIELDS.SUMMARY_CACHE]: cachePayload })
+          body: JSON.stringify({ values: { [BPIUM_FIELDS.SUMMARY_CACHE]: cachePayload } })
         }).catch((e: unknown) => console.error('Cache write failed:', e));
       }
 

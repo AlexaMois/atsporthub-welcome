@@ -81,10 +81,9 @@ const DocumentPage = () => {
         body: JSON.stringify({ docId: String(doc.id), fileUrl }),
       });
 
-      if (!res.ok) throw new Error("Summarization failed");
       const data = await res.json();
-      if (data.error && !data.summary) {
-        toast.error(data.error);
+      if (!res.ok || (data.error && !data.summary)) {
+        toast.error(data.error || data.summary || "Не удалось создать саммари.");
         return;
       }
       if (!data.summary) {
