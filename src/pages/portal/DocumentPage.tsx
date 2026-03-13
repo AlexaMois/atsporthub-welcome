@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import PdfViewer from "@/components/portal/PdfViewer";
 import OfficeViewer from "@/components/portal/OfficeViewer";
+import { handleDownload } from "@/utils/fileUtils";
 import {
   usePortal,
   getStatusId,
@@ -16,59 +17,6 @@ import {
   extractLinkedNames,
   extractFileUrl,
 } from "@/lib/portal-context";
-
-const sanitizeFilename = (name: string): string => {
-  return name
-    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
-    .replace(/\s+/g, "_")
-    .substring(0, 200)
-    .replace(/^\.+/, "_") || "document";
-};
-
-const getExtensionFromUrl = (url: string): string => {
-  const match = url.match(/\.([a-zA-Z0-9]{1,5})(?:\?|$)/);
-  return match ? `.${match[1].toLowerCase()}` : "";
-};
-
-const buildDownloadFilename = (title: string | undefined, docId: string | undefined, url: string): string => {
-  let base = "";
-  if (title && typeof title === "string" && title.trim().length > 0) {
-    base = title.trim();
-  } else if (docId) {
-    base = `document_${docId}`;
-  } else {
-    base = "document";
-  }
-  const ext = getExtensionFromUrl(url);
-  if (ext && !base.toLowerCase().endsWith(ext)) {
-    base += ext;
-  }
-  return sanitizeFilename(base);
-};
-
-const handleDownload = async (url: string, title?: string, docId?: string) => {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("fetch failed");
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = buildDownloadFilename(title, docId, url);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 100);
-  } catch {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = buildDownloadFilename(title, docId, url);
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-};
-
 
 const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
