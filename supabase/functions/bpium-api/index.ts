@@ -63,17 +63,22 @@ function recordFailedAttempt(ip: string): void {
   }
 }
 
-// --- Timing-safe password comparison ---
+// --- Timing-safe password comparison (HMAC-based, works in Deno) ---
 async function timingSafeCompare(a: string, b: string): Promise<boolean> {
   const encoder = new TextEncoder();
-  const aBuf = encoder.encode(a);
-  const bBuf = encoder.encode(b);
-  if (aBuf.length !== bBuf.length) {
-    // Compare against self to spend constant time, then return false
-    await crypto.subtle.timingSafeEqual(aBuf, aBuf);
-    return false;
-  }
-  return crypto.subtle.timingSafeEqual(aBuf, bBuf);
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode('hmac-compare-key'),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const [sigA, sigB] = await Promise.all([
+    crypto.subtle.sign('HMAC', key, encoder.encode(a)),
+    crypto.subtle.sign('HMAC', key, encoder.encode(b)),
+  ]);
+  const aArr = new Uint8Array(sigA);
+  const bArr = new Uint8Array(sigB);
+  let diff = 0;
+  for (let i = 0; i < aArr.length; i++) diff |= aArr[i] ^ bArr[i];
+  return diff === 0;
 }
 
 // --- JWT helpers ---
