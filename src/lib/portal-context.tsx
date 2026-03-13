@@ -110,21 +110,23 @@ export const PortalProvider = ({ children, roleName }: { children: ReactNode; ro
     setLoading(true);
     setError(false);
     try {
-      const [docsData, roles, projects, directions, sources] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchAction("get-documents"),
         fetchAction("get-roles"),
         fetchAction("get-projects"),
         fetchAction("get-directions"),
         fetchAction("get-sources"),
       ]);
+      const val = (i: number) => results[i].status === "fulfilled" ? results[i].value : [];
+      const docsData = val(0);
       if (Array.isArray(docsData)) setDocs(docsData);
       const toItems = (data: any[]): FilterItem[] =>
         Array.isArray(data) ? data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })) : [];
       setFilterOptions({
-        projects: toItems(projects),
-        roles: toItems(roles),
-        directions: toItems(directions),
-        source: toItems(sources),
+        projects: toItems(val(2)),
+        roles: toItems(val(1)),
+        directions: toItems(val(3)),
+        source: toItems(val(4)),
       });
     } catch (e) {
       console.error("Failed to load data:", e);

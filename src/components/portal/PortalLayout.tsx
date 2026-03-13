@@ -97,7 +97,7 @@ export default function PortalLayout() {
             {showWelcome && !isEmployee && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-foreground">Добрый день, Максим Игоревич!</p>
+                  <p className="font-semibold text-foreground">Добрый день!</p>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {new Date().toLocaleDateString("ru-RU", {
                       weekday: "long",
