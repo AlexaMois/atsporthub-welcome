@@ -4,8 +4,7 @@ import { Lock, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// URL Edge Function. Пароль проверяется на сервере — не виден в браузере.
-const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
+import { FUNC_URL, SUPABASE_ANON_KEY } from "@/lib/config";
 
 const PasswordPage = () => {
   const navigate = useNavigate();
@@ -25,7 +24,7 @@ const PasswordPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ password }),
       });

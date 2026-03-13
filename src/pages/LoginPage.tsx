@@ -4,7 +4,7 @@ import { Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
+import { FUNC_URL } from "@/lib/config";
 
 const LoginPage = () => {
   const navigate = useNavigate();

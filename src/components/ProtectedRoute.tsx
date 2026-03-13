@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 
-const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+import { FUNC_URL, SUPABASE_ANON_KEY as ANON_KEY } from "@/lib/config";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

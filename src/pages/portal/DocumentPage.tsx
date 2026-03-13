@@ -1,3 +1,4 @@
+import { FUNC_URL, SUPABASE_ANON_KEY } from "@/lib/config";
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2 } from "lucide-react";
@@ -60,8 +61,7 @@ const DocumentPage = () => {
     setSummarizing(true);
     setSummary(null);
     try {
-      const FUNC_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/bpium-api`;
-      const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const ANON_KEY = SUPABASE_ANON_KEY;
 
       const res = await fetch(`${FUNC_URL}?action=summarize`, {
         method: "POST",
