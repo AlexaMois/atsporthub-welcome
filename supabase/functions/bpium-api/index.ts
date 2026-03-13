@@ -286,7 +286,14 @@ Deno.serve(async (req) => {
       const users = await usersRes.json();
 
       // Ищем пользователя по номеру телефона (нормализуем оба)
-      const normalize = (p: string) => p.replace(/[\s\-().+]/g, '').replace(/^8/, '7');
+      // Нормализация: убираем пробелы/тире/скобки/плюс, приводим к 11 цифрам с 7
+      // Поддерживаем форматы: +79991234567, 89991234567, 79991234567, 9991234567
+      const normalize = (p: string): string => {
+        const digits = p.replace(/[\s\-().+]/g, ''); // только цифры
+        if (digits.length === 10) return '7' + digits;  // 9XXXXXXXXX → 79XXXXXXXXX
+        if (digits.startsWith('8') && digits.length === 11) return '7' + digits.slice(1); // 8XXX → 7XXX
+        return digits; // уже в формате 7XXXXXXXXX или другом
+      };
       const normalizedInput = normalize(rawPhone);
 
       const found = users.find((u: any) => {
