@@ -119,7 +119,7 @@ const DocumentPage = () => {
       className="flex flex-col md:flex-row md:h-[calc(100vh-6.5rem)] overflow-hidden"
     >
       {/* Left column */}
-      <div className="w-full md:w-[420px] md:flex-shrink-0 flex flex-col md:border-r md:overflow-y-auto p-6 gap-4">
+      <div className="w-full md:w-1/2 flex flex-col md:border-r md:overflow-y-auto p-6 gap-4">
         <h1 className="text-xl font-bold text-foreground leading-tight">{doc.title}</h1>
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -209,7 +209,7 @@ const DocumentPage = () => {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex flex-col overflow-hidden min-h-[400px] md:min-h-0">
+      <div className="w-full md:w-1/2 flex flex-col overflow-hidden min-h-[400px] md:min-h-0">
         {/* Tab bar */}
         <div className="flex border-b shrink-0">
           <button

@@ -436,11 +436,39 @@ Deno.serve(async (req) => {
           const result = await pdfParse(new Uint8Array(fileBuffer));
           extractedText = result.text || '';
         } else if (ext === 'doc') {
-          // .doc is OLE2 binary format, not supported by JSZip
-          return new Response(JSON.stringify({ error: 'Формат .doc не поддерживается. Пожалуйста, сохраните файл как .docx.' }), {
-            status: 415,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
+          // .doc is OLE2 binary format — extract what text we can
+          const bytes = new Uint8Array(fileBuffer);
+          const parts: string[] = [];
+          let i = 0;
+          while (i < bytes.length) {
+            // Look for runs of printable ASCII/Cyrillic text
+            if (bytes[i] >= 0x20 && bytes[i] < 0x7f) {
+              let run = '';
+              while (i < bytes.length && bytes[i] >= 0x20 && bytes[i] < 0x7f) {
+                run += String.fromCharCode(bytes[i]);
+                i++;
+              }
+              if (run.length >= 8) parts.push(run);
+            } else {
+              i++;
+            }
+          }
+          // Also try UTF-16LE decoding for Cyrillic content
+          try {
+            const utf16Text = new TextDecoder('utf-16le', { fatal: false }).decode(bytes);
+            const cleaned = utf16Text.replace(/[\x00-\x1f\x7f-\x9f]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (cleaned.length > 100) {
+              extractedText = cleaned;
+            }
+          } catch { /* ignore */ }
+          if (!extractedText && parts.length > 0) {
+            extractedText = parts.join(' ');
+          }
+          // If still empty, provide filename context for AI
+          if (!extractedText.trim()) {
+            const docTitle = docData?.values?.[BPIUM_FIELDS.TITLE] || fileName;
+            extractedText = `[Документ в формате .doc: "${docTitle}". Текст не удалось извлечь автоматически. Проанализируй на основе названия документа.]`;
+          }
         } else if (ext === 'docx') {
           const JSZip = (await import('jszip')).default;
           const zip = await JSZip.loadAsync(fileBuffer);
@@ -458,7 +486,7 @@ Deno.serve(async (req) => {
           }
           extractedText = parts.join('\n\n');
         } else {
-          return new Response(JSON.stringify({ summary: `Формат .${ext} не поддерживается для анализа. Поддерживаются: PDF, DOCX, XLSX.` }), {
+          return new Response(JSON.stringify({ summary: `Формат .${ext} не поддерживается для анализа. Поддерживаются: PDF, DOC, DOCX, XLSX.` }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
