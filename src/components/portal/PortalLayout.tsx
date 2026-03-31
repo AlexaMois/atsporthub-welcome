@@ -78,7 +78,7 @@ export default function PortalLayout() {
   };
 
   return (
-    <PortalProvider roleName={roleName} userRoles={isUserSession ? userRoles : undefined}>
+    <PortalProvider roleName={roleName} userRoles={userRoles.length > 0 ? userRoles : undefined}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <PortalSidebar roleName={roleName} />
