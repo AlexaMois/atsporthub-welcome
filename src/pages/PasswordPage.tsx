@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Lock, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-import { FUNC_URL } from "@/lib/config";
+import { apiCall } from "@/lib/api";
 
 const PasswordPage = () => {
   const navigate = useNavigate();
@@ -19,38 +18,24 @@ const PasswordPage = () => {
     setLoading(true);
     setError(null);
 
-    try {
-      const res = await fetch(`${FUNC_URL}?action=check-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ password }),
-      });
+    const result = await apiCall("check-password", { password });
 
-      if (res.status === 200) {
-        const data = await res.json();
-        if (data.token) {
-          sessionStorage.setItem("director_token", data.token);
-        }
-        navigate("/dashboard/director");
-      } else if (res.status === 429) {
-        setError("Слишком много попыток. Подождите 15 минут.");
-      } else if (res.status === 401) {
-        setError("Неверный пароль");
-      } else {
-        const data = await res.json().catch(() => ({}));
-        if (data?.error === "not_configured") {
-          setError("Ошибка конфигурации: пароль не настроен. Обратитесь к администратору.");
-        } else {
-          setError("Ошибка сервера. Попробуйте позже.");
-        }
-      }
-    } catch {
-      setError("Нет связи с сервером. Проверьте интернет.");
-    } finally {
-      setLoading(false);
+    if (result.error) {
+      setError(result.error);
+    } else if (result.ok && result.data?.ok && result.data?.token) {
+      sessionStorage.setItem("director_token", result.data.token);
+      navigate("/dashboard/director");
+    } else if (result.status === 429) {
+      setError("Слишком много попыток. Подождите 15 минут.");
+    } else if (result.status === 401) {
+      setError("Неверный пароль");
+    } else if (result.data?.error === "not_configured") {
+      setError("Ошибка конфигурации: пароль не настроен. Обратитесь к администратору.");
+    } else {
+      setError("Ошибка сервера. Попробуйте позже.");
     }
+
+    setLoading(false);
   };
 
   return (

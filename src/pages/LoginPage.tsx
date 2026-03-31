@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-import { FUNC_URL } from "@/lib/config";
+import { apiCall } from "@/lib/api";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -20,35 +19,27 @@ const LoginPage = () => {
     setLoading(true);
     setError(null);
 
-    try {
-      const res = await fetch(`${FUNC_URL}?action=verify-user`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: trimmed }),
-      });
+    const result = await apiCall("verify-user", { phone: trimmed });
 
-      const data = await res.json();
-
-      if (res.status === 200 && data.ok) {
-        // Сохраняем токен и данные пользователя
-        sessionStorage.setItem("user_token", data.token);
-        sessionStorage.setItem("user_fio", data.fio ?? "");
-        sessionStorage.setItem("user_roles", JSON.stringify(data.roles ?? []));
-        navigate("/portal");
-      } else if (res.status === 404) {
-        setError("Номер не найден. Обратитесь к администратору.");
-      } else if (res.status === 403) {
-        if (data.error === "fired") setError("Доступ закрыт: сотрудник уволен.");
-        else if (data.error === "blocked") setError("Доступ заблокирован. Обратитесь к администратору.");
-        else setError("Доступ недоступен. Обратитесь к администратору.");
-      } else {
-        setError("Ошибка сервера. Попробуйте позже.");
-      }
-    } catch {
-      setError("Нет связи с сервером. Проверьте интернет.");
-    } finally {
-      setLoading(false);
+    if (result.error) {
+      setError(result.error);
+    } else if (result.ok && result.data?.ok && result.data?.token) {
+      sessionStorage.setItem("user_token", result.data.token);
+      sessionStorage.setItem("user_fio", result.data.fio ?? "");
+      sessionStorage.setItem("user_roles", JSON.stringify(result.data.roles ?? []));
+      navigate("/portal");
+    } else if (result.status === 404) {
+      setError("Номер не найден. Обратитесь к администратору.");
+    } else if (result.status === 403) {
+      const err = result.data?.error;
+      if (err === "fired") setError("Доступ закрыт: сотрудник уволен.");
+      else if (err === "blocked") setError("Доступ заблокирован. Обратитесь к администратору.");
+      else setError("Доступ недоступен. Обратитесь к администратору.");
+    } else {
+      setError("Ошибка сервера. Попробуйте позже.");
     }
+
+    setLoading(false);
   };
 
   return (

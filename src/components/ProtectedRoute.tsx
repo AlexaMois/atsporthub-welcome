@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-
-import { FUNC_URL } from "@/lib/config";
+import { apiCall } from "@/lib/api";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,26 +20,14 @@ const ProtectedRoute = ({
       return;
     }
 
-    fetch(`${FUNC_URL}?action=verify-token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.valid) {
-          setStatus("valid");
-        } else {
-          sessionStorage.removeItem("director_token");
-          setStatus("invalid");
-        }
-      })
-      .catch(() => {
-        // Network error — allow access if token exists (graceful degradation)
+    apiCall("verify-token", { token }).then((result) => {
+      if (result.ok && result.data?.valid) {
         setStatus("valid");
-      });
+      } else {
+        sessionStorage.removeItem("director_token");
+        setStatus("invalid");
+      }
+    });
   }, []);
 
   if (status === "loading") return null;
