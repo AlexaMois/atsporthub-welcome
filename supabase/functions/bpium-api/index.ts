@@ -19,7 +19,8 @@ function getCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
-const BASE_URL = 'https://neiroresheniya.bpium.ru';
+const BPIUM_DOMAIN = Deno.env.get('BPIUM_DOMAIN') || 'ats.bpium.ru';
+const BASE_URL = `https://${BPIUM_DOMAIN}`;
 
 const BPIUM_FIELDS = {
   TITLE: '2',
