@@ -282,9 +282,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Получаем всех пользователей из каталога 64 (Пользователи АТС)
+      // Получаем всех пользователей из каталога users (Пользователи АТС)
       const usersRes = await fetch(
-        `${BASE_URL}/api/v1/catalogs/64/records?count=500`,
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records?count=500`,
         { headers: authHeaders }
       );
       if (!usersRes.ok) {
