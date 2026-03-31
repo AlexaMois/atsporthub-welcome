@@ -26,8 +26,11 @@ const LoginPage = () => {
     } else if (result.ok && result.data?.ok && result.data?.token) {
       sessionStorage.setItem("user_token", result.data.token);
       sessionStorage.setItem("user_fio", result.data.fio ?? "");
-      sessionStorage.setItem("user_roles", JSON.stringify(result.data.roles ?? []));
-      navigate("/portal");
+      const roles: string[] = result.data.roles ?? [];
+      sessionStorage.setItem("user_roles", JSON.stringify(roles));
+      // Директор → отдельный раздел
+      const isDirector = roles.some((r: string) => r.toLowerCase().includes("генеральный директор"));
+      navigate(isDirector ? "/dashboard/director" : "/portal");
     } else if (result.status === 404) {
       setError("Номер не найден. Обратитесь к администратору.");
     } else if (result.status === 403) {
