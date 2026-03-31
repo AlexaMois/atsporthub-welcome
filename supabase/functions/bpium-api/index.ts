@@ -44,6 +44,7 @@ const CATALOG = {
   PROJECTS: '54',
   DIRECTIONS: '55',
   SOURCES: '59',
+  USERS: 'users',
 } as const;
 
 // --- Rate limiting for password checks ---
