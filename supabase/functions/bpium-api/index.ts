@@ -342,7 +342,7 @@ Deno.serve(async (req) => {
 
       // Обновляем last_login в Bpium
       fetch(
-        `${BASE_URL}/api/v1/catalogs/64/records/${found.id}`,
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records/${found.id}`,
         {
           method: 'PATCH',
           headers: authHeaders,

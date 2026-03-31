@@ -25,7 +25,7 @@ Never call Bpium API directly from frontend.
 - Projects: 54
 - Directions: 55
 - Sources: 59 (field 13)
-- Users (АТС): 64
+- Users (АТС): users (текстовый ID)
 
 ## Field Mapping (Catalog 56 — Documents)
 
