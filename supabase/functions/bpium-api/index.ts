@@ -175,11 +175,11 @@ const fetchAllPages = async (url: string, authHeaders: Record<string, string>): 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     const origin = req.headers.get('Origin') || '';
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return new Response(null, {
         headers: {
           'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
           'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
           'Access-Control-Max-Age': '86400',
         },
@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
 
   // Block requests from disallowed origins
   const origin = req.headers.get('Origin') || '';
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && !isAllowedOrigin(origin)) {
     return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
