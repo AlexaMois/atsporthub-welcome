@@ -1,16 +1,11 @@
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-
-import { FUNC_URL } from "@/lib/config";
+import { apiCall } from "@/lib/api";
 
 interface UserProtectedRouteProps {
   children: React.ReactNode;
 }
 
-/**
- * Защищает маршруты портала — пропускает только пользователей
- * с валидным JWT-токеном, выданным после верификации телефона в Bpium.
- */
 const UserProtectedRoute = ({ children }: UserProtectedRouteProps) => {
   const [status, setStatus] = useState<"loading" | "valid" | "invalid">("loading");
 
@@ -21,26 +16,16 @@ const UserProtectedRoute = ({ children }: UserProtectedRouteProps) => {
       return;
     }
 
-    fetch(`${FUNC_URL}?action=verify-token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.valid) {
-          setStatus("valid");
-        } else {
-          sessionStorage.removeItem("user_token");
-          sessionStorage.removeItem("user_fio");
-          sessionStorage.removeItem("user_roles");
-          setStatus("invalid");
-        }
-      })
-      .catch(() => {
-        // Сеть недоступна — пропускаем если токен есть (graceful degradation)
+    apiCall("verify-token", { token }).then((result) => {
+      if (result.ok && result.data?.valid) {
         setStatus("valid");
-      });
+      } else {
+        sessionStorage.removeItem("user_token");
+        sessionStorage.removeItem("user_fio");
+        sessionStorage.removeItem("user_roles");
+        setStatus("invalid");
+      }
+    });
   }, []);
 
   if (status === "loading") return null;

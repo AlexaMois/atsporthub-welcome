@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
+import { safeJsonParse } from "@/lib/api";
 import { PortalSidebar } from "./PortalSidebar";
 import { PortalBreadcrumb } from "./PortalBreadcrumb";
 import atsLogo from "@/assets/ats-logo.jpg";
@@ -58,7 +59,7 @@ export default function PortalLayout() {
   const isDirector = Boolean(sessionStorage.getItem("director_token"));
   const userToken = sessionStorage.getItem("user_token");
   const userFio = sessionStorage.getItem("user_fio") ?? "";
-  const userRoles: string[] = JSON.parse(sessionStorage.getItem("user_roles") ?? "[]");
+  const userRoles: string[] = safeJsonParse<string[]>(sessionStorage.getItem("user_roles"), []);
 
   // roleName: из URL (старый маршрут) или первая роль сотрудника
   const roleName = roleNameParam ?? (userRoles.length === 1 ? userRoles[0] : undefined);

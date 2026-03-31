@@ -11,7 +11,7 @@ interface FilterItem {
   name: string;
 }
 
-import { FUNC_URL, SUPABASE_ANON_KEY as ANON_KEY } from "@/lib/config";
+import { FUNC_URL } from "@/lib/config";
 
 // Роль "Все сотрудники" — специальное значение, означает "показать всё"
 const ALL_EMPLOYEES_ROLE = "Все сотрудники";
@@ -25,7 +25,7 @@ const PRIVILEGED_ROLES = [
 
 const fetchAction = async (action: string) => {
   const res = await fetch(`${FUNC_URL}?action=${action}`, {
-    headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
   });
   if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
   return res.json();
