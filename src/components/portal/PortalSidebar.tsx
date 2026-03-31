@@ -111,7 +111,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
 
         {/* Filter groups */}
         {FILTER_GROUPS.map((g) => {
-          if ((roleName || isEmployeePortal) && g.key === "roles") return null;
+          if ((roleName || basePath === "/portal") && g.key === "roles") return null;
           const items = filterOptions[g.key] || [];
           if (items.length === 0) return null;
           const Icon = GROUP_ICONS[g.key] || FileText;
