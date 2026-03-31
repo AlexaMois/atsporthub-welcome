@@ -11,7 +11,7 @@ interface FilterItem {
   name: string;
 }
 
-import { FUNC_URL, SUPABASE_ANON_KEY as ANON_KEY } from "@/lib/config";
+import { FUNC_URL } from "@/lib/config";
 
 // Роль "Все сотрудники" — специальное значение, означает "показать всё"
 const ALL_EMPLOYEES_ROLE = "Все сотрудники";
