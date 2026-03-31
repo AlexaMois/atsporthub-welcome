@@ -1,40 +1,78 @@
 
 
-## План: Обновить домен Bpium и ID каталога пользователей
+## План: Чистка дублей и мусора (11 пунктов)
 
-### Что меняем
+### 1. Дубль маршрута `/login`
+**App.tsx** — удалить `<Route path="/" element={<LoginPage />} />`, оставить `/login`. Добавить `<Route path="/" element={<Navigate to="/login" replace />} />`.
 
-**1. `supabase/functions/bpium-api/index.ts`**
+### 2. `basePath` — вынести в хук
+Создать `src/hooks/useBasePath.ts`:
+```ts
+export function useBasePath() {
+  const { pathname } = useLocation();
+  return pathname.startsWith("/portal") ? "/portal" : "/dashboard/director";
+}
+```
+Заменить дублированную логику в 4 файлах: `DocumentListPage.tsx`, `DocumentPage.tsx`, `PortalBreadcrumb.tsx`, `PortalSidebar.tsx`.
 
-- Заменить хардкод `BASE_URL = 'https://neiroresheniya.bpium.ru'` на динамическое чтение из секрета `BPIUM_DOMAIN`:
-  ```typescript
-  const BPIUM_DOMAIN = Deno.env.get('BPIUM_DOMAIN') || 'ats.bpium.ru';
-  const BASE_URL = `https://${BPIUM_DOMAIN}`;
-  ```
+### 3. `LinkedObj` — один экспорт
+Удалить дубль `interface LinkedObj` из `DocumentListPage.tsx`. Экспортировать из `portal-context.tsx`, импортировать где нужно.
 
-- В объекте `CATALOG` добавить `USERS: 'users'` (вместо хардкода `64`):
-  ```typescript
-  const CATALOG = {
-    DOCUMENTS: '56',
-    ROLES: '57',
-    PROJECTS: '54',
-    DIRECTIONS: '55',
-    SOURCES: '59',
-    USERS: 'users',
-  } as const;
-  ```
+### 4. `fetchAction` → `apiCall`
+В `portal-context.tsx` удалить локальную `fetchAction`, заменить 5 вызовов на `apiCall` из `@/lib/api.ts`. Адаптировать: `apiCall` возвращает `ApiResult`, поэтому обращаться к `.data`.
 
-- Заменить все вхождения `catalogs/64` на `catalogs/${CATALOG.USERS}` (2 места: поиск пользователей и обновление last_login).
+### 5. `SUPABASE_PROJECT_ID` — удалить неиспользуемый экспорт
+Из `src/lib/config.ts` убрать строку `export const SUPABASE_PROJECT_ID = ...`. Из `.env.example` убрать `VITE_SUPABASE_PROJECT_ID`.
 
-**2. `docs/PROJECT_KNOWLEDGE.md`** — обновить домен и ID каталога пользователей.
+### 6. `CHECKLIST = '19'` — задокументировать
+Добавить комментарий `// reserved for future "ознакомление" feature` в Edge Function, не удалять.
 
-### Секрет `BPIUM_DOMAIN`
-Уже существует в проекте. Убедитесь, что его значение = `ats.bpium.ru` (без `https://`). Если нет — обновим.
+### 7. `VITE_DIRECTOR_PASSWORD` → `DIRECTOR_PASSWORD`
+В `supabase/functions/bpium-api/index.ts` (строка 223): заменить `Deno.env.get('VITE_DIRECTOR_PASSWORD')` на `Deno.env.get('DIRECTOR_PASSWORD')`. Создать новый секрет `DIRECTOR_PASSWORD` со значением из старого.
+
+### 8. `roleNameParam` — удалить мёртвый параметр
+В `PortalLayout.tsx`: убрать `useParams<{ roleName?: string }>()` и связанную переменную `roleNameParam`. Пропс `roleName` для `PortalProvider` вычислять только из `userRoles`.
+
+### 9. Lock-файлы — оставить один
+Удалить `bun.lock` и `package-lock.json`, оставить `bun.lockb`.
+
+### 10. `supabase/.temp` — в `.gitignore`
+Добавить `supabase/.temp/` в `.gitignore`.
+
+### 11. `verify-user` — поиск по телефону через Bpium query
+Вместо `count=500` (загрузка всех пользователей) использовать Bpium API фильтрацию:
+```
+POST /api/v1/catalogs/users/records
+{ "filters": { "phone": { "$contains": normalizedPhone } }, "count": 5 }
+```
+Это уменьшит нагрузку и ускорит вход.
+
+---
 
 ### Файлы
+
 ```text
+Новые:
+  src/hooks/useBasePath.ts
+
 Изменённые:
-  supabase/functions/bpium-api/index.ts  — динамический домен + CATALOG.USERS
-  docs/PROJECT_KNOWLEDGE.md              — актуальные данные
+  src/App.tsx                              — редирект / → /login
+  src/lib/config.ts                        — удалить SUPABASE_PROJECT_ID
+  src/lib/portal-context.tsx               — экспорт LinkedObj, fetchAction → apiCall
+  src/pages/portal/DocumentListPage.tsx    — useBasePath, убрать LinkedObj
+  src/pages/portal/DocumentPage.tsx        — useBasePath
+  src/components/portal/PortalBreadcrumb.tsx — useBasePath
+  src/components/portal/PortalSidebar.tsx  — useBasePath
+  src/components/portal/PortalLayout.tsx   — убрать roleNameParam
+  supabase/functions/bpium-api/index.ts    — DIRECTOR_PASSWORD, CHECKLIST комментарий, verify-user query
+  .env.example                             — убрать VITE_SUPABASE_PROJECT_ID
+  .gitignore                               — добавить supabase/.temp/
+
+Удаляемые:
+  bun.lock
+  package-lock.json
+
+Секреты:
+  Добавить DIRECTOR_PASSWORD (значение = текущий VITE_DIRECTOR_PASSWORD)
 ```
 
