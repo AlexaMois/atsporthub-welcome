@@ -1,6 +1,7 @@
 import { FileText, FolderOpen, Folder, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useBasePath } from "@/hooks/useBasePath";
 import { usePortal, FILTER_GROUPS } from "@/lib/portal-context";
 import {
   Sidebar,
