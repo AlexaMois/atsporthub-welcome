@@ -52,40 +52,31 @@ Never call Bpium API directly from frontend.
 
 ## Routes
 
-/ — login by phone (employee)
+/ — login by phone (all users)
 
 /login — same as /
-
-/login/director — password screen (director)
 
 /portal — employee portal (protected by UserProtectedRoute, JWT from verify-user)
 
 /portal/doc/:docId — document detail
 
-/dashboard/director — director portal (protected by ProtectedRoute, JWT from check-password)
+/dashboard/director — director portal (protected by UserProtectedRoute, JWT from verify-user; requires role "Генеральный директор")
 
 /dashboard/director/doc/:docId — document detail (director)
 
 ## Auth Flow
 
-### Employee
+### Unified (all users including director)
 1. LoginPage → POST bpium-api?action=verify-user (phone)
 2. Backend searches catalog 64, checks status, returns JWT + fio + roles
 3. Frontend stores user_token, user_fio, user_roles in sessionStorage
-4. UserProtectedRoute verifies JWT via bpium-api?action=verify-token
-5. PortalLayout reads session, PortalProvider loads documents/filters
-
-### Director
-1. PasswordPage → POST bpium-api?action=check-password
-2. Backend compares with VITE_DIRECTOR_PASSWORD secret, returns JWT
-3. Frontend stores director_token in sessionStorage
-4. ProtectedRoute verifies JWT via bpium-api?action=verify-token
-5. PortalLayout/PortalProvider same as employee
+4. If roles include "Генеральный директор" → redirect to /dashboard/director
+5. Otherwise → redirect to /portal
+6. UserProtectedRoute verifies JWT via bpium-api?action=verify-token
+7. PortalLayout reads session, PortalProvider loads documents/filters
 
 ### Security
 - JWT signed with JWT_SECRET (server-side only)
-- Rate limiting on password attempts (5 per 15 min)
-- Timing-safe password comparison
 - Network errors on token verify → redirect to login (no silent pass-through)
 
 ## API Helper

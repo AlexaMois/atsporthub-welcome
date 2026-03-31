@@ -24,31 +24,30 @@
 ```
 src/
   pages/
-    Index.tsx              # Главная — выбор роли
-    PasswordPage.tsx       # Вход для Генерального директора
+    LoginPage.tsx            # Вход по номеру телефона (все пользователи)
     portal/
-      DocumentListPage.tsx # Список документов
-      DocumentPage.tsx     # Страница документа
+      DocumentListPage.tsx   # Список документов
+      DocumentPage.tsx       # Страница документа
   components/
-    ProtectedRoute.tsx     # Гард для закрытых маршрутов
+    UserProtectedRoute.tsx   # Гард для закрытых маршрутов (JWT)
     portal/
-      PortalLayout.tsx     # Лейаут с сайдбаром
+      PortalLayout.tsx       # Лейаут с сайдбаром
   lib/
-    portal-context.tsx     # Контекст: данные из Bpium
+    portal-context.tsx       # Контекст: данные из Bpium
 supabase/
   functions/bpium-api/
-    index.ts               # Edge Function — прокси к Bpium API
+    index.ts                 # Edge Function — прокси к Bpium API
 ```
 
 ## Маршруты
 
 | Путь | Описание |
 |---|---|
-| `/` | Главная — выбор роли |
-| `/role/:roleName` | Портал для сотрудника по роли |
-| `/role/:roleName/doc/:docId` | Страница документа |
-| `/login/director` | Вход для директора |
-| `/dashboard/director` | Панель директора (защищена) |
+| `/` | Вход по номеру телефона |
+| `/portal` | Портал сотрудника (документы по роли) |
+| `/portal/doc/:docId` | Страница документа |
+| `/dashboard/director` | Панель директора (требуется роль «Генеральный директор») |
+| `/dashboard/director/doc/:docId` | Страница документа (директор) |
 
 ## Локальный запуск
 
@@ -77,7 +76,8 @@ npm run dev
 ## Безопасность
 
 - Файл `.env` добавлен в `.gitignore` — **не коммитить его в git**
-- Маршрут `/dashboard/director` закрыт компонентом `ProtectedRoute`
+- Все закрытые маршруты защищены компонентом `UserProtectedRoute` (проверка JWT)
+- Авторизация единая: вход по номеру телефона, роль определяет доступ
 - Supabase Edge Function является единственным местом, где используются учётные данные Bpium
 
 ## Разработка
@@ -86,12 +86,7 @@ npm run dev
 Изменения автоматически коммитятся в этот репозиторий.
 
 ```sh
-# Запуск тестов
 npm run test
-
-# Линтинг
 npm run lint
-
-# Сборка продакшн
 npm run build
 ```
