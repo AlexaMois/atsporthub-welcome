@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 
-import { FUNC_URL, SUPABASE_ANON_KEY as ANON_KEY } from "@/lib/config";
+import { FUNC_URL } from "@/lib/config";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
