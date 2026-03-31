@@ -8,7 +8,7 @@ Stack: React, TypeScript, Tailwind CSS, Supabase (Lovable Cloud).
 
 ## Bpium API
 
-Base URL: https://neiroresheniya.bpium.ru
+Base URL: https://ats.bpium.ru (dynamic via BPIUM_DOMAIN secret)
 
 Auth: Basic Auth via Supabase Secrets (BPIUM_LOGIN, BPIUM_PASSWORD)
 
