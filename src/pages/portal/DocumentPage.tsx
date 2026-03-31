@@ -1,6 +1,6 @@
 import { FUNC_URL, SUPABASE_ANON_KEY } from "@/lib/config";
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ExternalLink, Download, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +18,7 @@ import {
   extractLinkedNames,
   extractFileUrl,
 } from "@/lib/portal-context";
+import { useBasePath } from "@/hooks/useBasePath";
 
 const isPdf = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
 const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
@@ -25,8 +26,7 @@ const isOffice = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(u
 const DocumentPage = () => {
   const { docId } = useParams<{ docId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const basePath = location.pathname.startsWith("/portal") ? "/portal" : "/dashboard/director";
+  const basePath = useBasePath();
   const { docs, loading } = usePortal();
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);

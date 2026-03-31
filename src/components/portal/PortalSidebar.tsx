@@ -1,6 +1,7 @@
 import { FileText, FolderOpen, Folder, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useBasePath } from "@/hooks/useBasePath";
 import { usePortal, FILTER_GROUPS } from "@/lib/portal-context";
 import {
   Sidebar,
@@ -63,9 +64,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const location = useLocation();
-  const isEmployeePortal = location.pathname.startsWith("/portal");
-  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
+  const basePath = useBasePath();
   const isDocListPage = location.pathname === basePath;
   const noFiltersActive = Object.values(activeFilters).every(s => s.size === 0);
 
@@ -112,7 +111,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
 
         {/* Filter groups */}
         {FILTER_GROUPS.map((g) => {
-          if ((roleName || isEmployeePortal) && g.key === "roles") return null;
+          if ((roleName || basePath === "/portal") && g.key === "roles") return null;
           const items = filterOptions[g.key] || [];
           if (items.length === 0) return null;
           const Icon = GROUP_ICONS[g.key] || FileText;

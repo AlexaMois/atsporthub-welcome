@@ -8,17 +8,15 @@ import {
   formatDate,
   extractFileUrl,
   FILTER_GROUPS,
+  type LinkedObj,
 } from "@/lib/portal-context";
-
-interface LinkedObj {
-  recordTitle: string;
-}
+import { useBasePath } from "@/hooks/useBasePath";
 
 const DocumentListPage = () => {
   const location = useLocation();
   const isEmployeePortal = location.pathname.startsWith("/portal");
   const isDirector = location.pathname.startsWith("/dashboard/director");
-  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
+  const basePath = useBasePath();
 
   const {
     loading, error, retry, filteredDocs, stats, searchQuery, setSearchQuery,

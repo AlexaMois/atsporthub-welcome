@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import UserProtectedRoute from "@/components/UserProtectedRoute";
 
@@ -22,8 +22,8 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            {/* Вход по телефону */}
-            <Route path="/" element={<LoginPage />} />
+            {/* Редирект / → /login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
 
             {/* Вход для директора по паролю */}

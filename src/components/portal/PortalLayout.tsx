@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
@@ -53,16 +53,15 @@ function PortalHeader({ onLogout, displayName, roleName }: { onLogout: () => voi
 
 export default function PortalLayout() {
   const navigate = useNavigate();
-  const { roleName: roleNameParam } = useParams<{ roleName?: string }>();
 
-  // Определяем режим: директор, обычный сотрудник или старый role-маршрут
+  // Определяем режим: директор или обычный сотрудник
   const isDirector = Boolean(sessionStorage.getItem("director_token"));
   const userToken = sessionStorage.getItem("user_token");
   const userFio = sessionStorage.getItem("user_fio") ?? "";
   const userRoles: string[] = safeJsonParse<string[]>(sessionStorage.getItem("user_roles"), []);
 
-  // roleName: из URL (старый маршрут) или первая роль сотрудника
-  const roleName = roleNameParam ?? (userRoles.length === 1 ? userRoles[0] : undefined);
+  // roleName: первая роль сотрудника (если единственная)
+  const roleName = userRoles.length === 1 ? userRoles[0] : undefined;
 
   const isUserSession = Boolean(userToken);
   const displayName = userFio || (isDirector ? "Директор" : "");
