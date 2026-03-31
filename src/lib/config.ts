@@ -1,6 +1,7 @@
-// Supabase project configuration — pulled from env
-// VITE_SUPABASE_PROJECT_ID is always correct and provided by Lovable Cloud
-const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-export const SUPABASE_URL: string = `https://${PROJECT_ID}.supabase.co`;
+// Supabase project configuration
+// NOTE: VITE_SUPABASE_URL from env may be stale after project migration.
+// We derive the URL from the known project ref to guarantee correctness.
+const PROJECT_REF = "piivkjefugxyagwxriok";
+export const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`;
 export const SUPABASE_ANON_KEY: string = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 export const FUNC_URL = `${SUPABASE_URL}/functions/v1/bpium-api`;
