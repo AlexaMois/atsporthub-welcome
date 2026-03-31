@@ -3,11 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import UserProtectedRoute from "@/components/UserProtectedRoute";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const PasswordPage = lazy(() => import("./pages/PasswordPage"));
 const PortalLayout = lazy(() => import("./components/portal/PortalLayout"));
 const DocumentListPage = lazy(() => import("./pages/portal/DocumentListPage"));
 const DocumentPage = lazy(() => import("./pages/portal/DocumentPage"));
@@ -22,14 +20,10 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            {/* Редирект / → /login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
 
-            {/* Вход для директора по паролю */}
-            <Route path="/login/director" element={<PasswordPage />} />
-
-            {/* Портал для обычных сотрудников — защищён проверкой телефона */}
+            {/* Портал сотрудников */}
             <Route
               path="/portal"
               element={
@@ -42,13 +36,13 @@ const App = () => (
               <Route path="doc/:docId" element={<DocumentPage />} />
             </Route>
 
-            {/* Портал для директора — защищён JWT паролем */}
+            {/* Портал директора — тот же layout, но отдельный раздел */}
             <Route
               path="/dashboard/director"
               element={
-                <ProtectedRoute>
+                <UserProtectedRoute>
                   <PortalLayout />
-                </ProtectedRoute>
+                </UserProtectedRoute>
               }
             >
               <Route index element={<DocumentListPage />} />

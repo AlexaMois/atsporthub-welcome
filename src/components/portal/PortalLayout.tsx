@@ -54,17 +54,12 @@ function PortalHeader({ onLogout, displayName, roleName }: { onLogout: () => voi
 export default function PortalLayout() {
   const navigate = useNavigate();
 
-  // Определяем режим: директор или обычный сотрудник
-  const isDirector = Boolean(sessionStorage.getItem("director_token"));
-  const userToken = sessionStorage.getItem("user_token");
+  // Всё через единую сессию user_token
   const userFio = sessionStorage.getItem("user_fio") ?? "";
   const userRoles: string[] = safeJsonParse<string[]>(sessionStorage.getItem("user_roles"), []);
 
-  // roleName: первая роль сотрудника (если единственная)
   const roleName = userRoles.length === 1 ? userRoles[0] : undefined;
-
-  const isUserSession = Boolean(userToken);
-  const displayName = userFio || (isDirector ? "Директор" : "");
+  const displayName = userFio || "";
 
   const [showWelcome, setShowWelcome] = useState(
     () => sessionStorage.getItem("welcome_shown") !== "true"
