@@ -3,12 +3,19 @@ const ALLOWED_ORIGINS = [
   'https://atsporthub-welcome.lovable.app',
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow all *.lovable.app subdomains (preview URLs)
+  if (/^https:\/\/[a-z0-9\-]+\.lovable\.app$/.test(origin)) return true;
+  return false;
+}
+
 function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : '';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
   };
 }
 
@@ -168,11 +175,11 @@ const fetchAllPages = async (url: string, authHeaders: Record<string, string>): 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     const origin = req.headers.get('Origin') || '';
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return new Response(null, {
         headers: {
           'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
           'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
           'Access-Control-Max-Age': '86400',
         },
@@ -185,7 +192,7 @@ Deno.serve(async (req) => {
 
   // Block requests from disallowed origins
   const origin = req.headers.get('Origin') || '';
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && !isAllowedOrigin(origin)) {
     return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
@@ -211,7 +218,7 @@ Deno.serve(async (req) => {
 
       const body = await req.json();
       const submitted = body?.password ?? '';
-      const expected = Deno.env.get('DIRECTOR_PASSWORD') ?? '';
+      const expected = Deno.env.get('VITE_DIRECTOR_PASSWORD') ?? '';
 
       if (!expected) {
         return new Response(JSON.stringify({ ok: false, error: 'not_configured' }), {
