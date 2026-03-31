@@ -15,7 +15,7 @@ export function PortalBreadcrumb() {
   const { docs } = usePortal();
   const basePath = useBasePath();
 
-  const isDocPage = !!docId && location.pathname.includes("/doc/");
+  const isDocPage = !!docId;
   const docTitle = isDocPage
     ? docs.find((d) => String(d.id) === docId)?.title || `Документ #${docId}`
     : null;
