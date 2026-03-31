@@ -64,9 +64,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const location = useLocation();
-  const isEmployeePortal = location.pathname.startsWith("/portal");
-  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
+  const basePath = useBasePath();
   const isDocListPage = location.pathname === basePath;
   const noFiltersActive = Object.values(activeFilters).every(s => s.size === 0);
 

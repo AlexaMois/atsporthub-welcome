@@ -22,8 +22,8 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={null}>
           <Routes>
-            {/* Вход по телефону */}
-            <Route path="/" element={<LoginPage />} />
+            {/* Редирект / → /login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
 
             {/* Вход для директора по паролю */}

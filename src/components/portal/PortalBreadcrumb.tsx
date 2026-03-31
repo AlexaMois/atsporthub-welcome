@@ -1,4 +1,4 @@
-import { useLocation, useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -8,14 +8,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { usePortal } from "@/lib/portal-context";
+import { useBasePath } from "@/hooks/useBasePath";
 
 export function PortalBreadcrumb() {
-  const location = useLocation();
   const { docId } = useParams<{ docId?: string }>();
   const { docs } = usePortal();
-
-  const isEmployeePortal = location.pathname.startsWith("/portal");
-  const basePath = isEmployeePortal ? "/portal" : "/dashboard/director";
+  const basePath = useBasePath();
 
   const isDocPage = !!docId && location.pathname.includes("/doc/");
   const docTitle = isDocPage

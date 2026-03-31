@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
+import { apiCall } from "@/lib/api";
 
-interface LinkedObj {
+export interface LinkedObj {
   catalogId: string;
   recordId: string;
   recordTitle: string;
@@ -11,8 +12,6 @@ interface FilterItem {
   name: string;
 }
 
-import { FUNC_URL } from "@/lib/config";
-
 // Роль "Все сотрудники" — специальное значение, означает "показать всё"
 const ALL_EMPLOYEES_ROLE = "Все сотрудники";
 
@@ -22,14 +21,6 @@ const PRIVILEGED_ROLES = [
   "начальник участка / руководитель проекта",
   "все сотрудники",
 ];
-
-const fetchAction = async (action: string) => {
-  const res = await fetch(`${FUNC_URL}?action=${action}`, {
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
-  return res.json();
-};
 
 export const getStatusId = (doc: any): number => {
   if (Array.isArray(doc.status)) return parseInt(doc.status[0]) || 0;
@@ -119,16 +110,19 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
     setError(false);
     try {
       const results = await Promise.allSettled([
-        fetchAction("get-documents"),
-        fetchAction("get-roles"),
-        fetchAction("get-projects"),
-        fetchAction("get-directions"),
-        fetchAction("get-sources"),
+        apiCall("get-documents", undefined, "GET"),
+        apiCall("get-roles", undefined, "GET"),
+        apiCall("get-projects", undefined, "GET"),
+        apiCall("get-directions", undefined, "GET"),
+        apiCall("get-sources", undefined, "GET"),
       ]);
-      const val = (i: number) => results[i].status === "fulfilled" ? results[i].value : [];
+      const val = (i: number) => {
+        const r = results[i];
+        return r.status === "fulfilled" && r.value.ok ? r.value.data : [];
+      };
       const docsData = val(0);
       if (Array.isArray(docsData)) setDocs(docsData);
-      const toItems = (data: any[]): FilterItem[] =>
+      const toItems = (data: any): FilterItem[] =>
         Array.isArray(data) ? data.map((r: any) => ({ id: String(r.id), name: r.name || `#${r.id}` })) : [];
       setFilterOptions({
         projects: toItems(val(2)),
@@ -147,14 +141,11 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
   useEffect(() => { load(); }, []);
 
   // Auto-apply role filter for employee view
-  // userRoles — массив ролей из Bpium (вход по телефону)
-  // roleName — одиночная роль из URL (старый маршрут)
   useEffect(() => {
     if (!filterOptions.roles?.length) return;
     if (isAllEmployeesMode) return;
 
     if (userRoles && userRoles.length > 0) {
-      // Пользователь вошёл по телефону — показываем документы по всем его ролям
       const matchedIds = filterOptions.roles
         .filter((r) => userRoles.some((ur) => ur.toLowerCase() === r.name.toLowerCase()))
         .map((r) => r.id);
@@ -210,7 +201,6 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
 
   const filteredDocs = useMemo(() => {
     return docs.filter((doc) => {
-      // Фильтр по поиску (по названию и тегам)
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const inTitle = doc.title?.toLowerCase().includes(q);
@@ -222,9 +212,8 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
         if (!inTitle && !inTags) return false;
       }
 
-      // Если режим "Все сотрудники" — фильтр по роли не применяем, остальные фильтры работают
       for (const g of FILTER_GROUPS) {
-        if (g.key === "roles" && isAllEmployeesMode) continue; // пропускаем фильтр по роли
+        if (g.key === "roles" && isAllEmployeesMode) continue;
         const sel = activeFilters[g.key];
         if (sel && sel.size > 0) {
           const docField = doc[g.key];

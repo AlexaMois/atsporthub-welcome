@@ -282,33 +282,53 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Получаем всех пользователей из каталога users (Пользователи АТС)
-      const usersRes = await fetch(
-        `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records?count=500`,
-        { headers: authHeaders }
-      );
-      if (!usersRes.ok) {
-        return new Response(JSON.stringify({ ok: false, error: 'bpium_error' }), {
-          status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const users = await usersRes.json();
-
-      // Ищем пользователя по номеру телефона (нормализуем оба)
       // Нормализация: убираем пробелы/тире/скобки/плюс, приводим к 11 цифрам с 7
-      // Поддерживаем форматы: +79991234567, 89991234567, 79991234567, 9991234567
       const normalize = (p: string): string => {
-        const digits = p.replace(/[\s\-().+]/g, ''); // только цифры
-        if (digits.length === 10) return '7' + digits;  // 9XXXXXXXXX → 79XXXXXXXXX
-        if (digits.startsWith('8') && digits.length === 11) return '7' + digits.slice(1); // 8XXX → 7XXX
-        return digits; // уже в формате 7XXXXXXXXX или другом
+        const digits = p.replace(/[\s\-().+]/g, '');
+        if (digits.length === 10) return '7' + digits;
+        if (digits.startsWith('8') && digits.length === 11) return '7' + digits.slice(1);
+        return digits;
       };
       const normalizedInput = normalize(rawPhone);
+      // Берём последние 10 цифр для поиска через Bpium filter
+      const searchDigits = normalizedInput.length >= 10 ? normalizedInput.slice(-10) : normalizedInput;
 
-      const found = users.find((u: any) => {
-        const phones: any[] = u.values?.phone ?? [];
-        return phones.some((p: any) => normalize(p.contact ?? '') === normalizedInput);
-      });
+      // Поиск через Bpium query filter вместо загрузки всех 500 пользователей
+      const usersRes = await fetch(
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records`,
+        {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            filters: { phone: { $contains: searchDigits } },
+            count: 10,
+          }),
+        }
+      );
+      if (!usersRes.ok) {
+        // Fallback: если POST-фильтр не поддерживается, пробуем GET
+        const fallbackRes = await fetch(
+          `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records?count=500`,
+          { headers: authHeaders }
+        );
+        if (!fallbackRes.ok) {
+          return new Response(JSON.stringify({ ok: false, error: 'bpium_error' }), {
+            status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const allUsers = await fallbackRes.json();
+        var found = allUsers.find((u: any) => {
+          const phones: any[] = u.values?.phone ?? [];
+          return phones.some((p: any) => normalize(p.contact ?? '') === normalizedInput);
+        });
+      } else {
+        const users = await usersRes.json();
+        // Точное совпадение после нормализации
+        var found = (Array.isArray(users) ? users : []).find((u: any) => {
+          const phones: any[] = u.values?.phone ?? [];
+          return phones.some((p: any) => normalize(p.contact ?? '') === normalizedInput);
+        });
+      }
 
       if (!found) {
         return new Response(JSON.stringify({ ok: false, error: 'not_found' }), {
