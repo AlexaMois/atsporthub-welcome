@@ -19,7 +19,8 @@ function getCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
-const BASE_URL = 'https://neiroresheniya.bpium.ru';
+const BPIUM_DOMAIN = Deno.env.get('BPIUM_DOMAIN') || 'ats.bpium.ru';
+const BASE_URL = `https://${BPIUM_DOMAIN}`;
 
 const BPIUM_FIELDS = {
   TITLE: '2',
@@ -43,6 +44,7 @@ const CATALOG = {
   PROJECTS: '54',
   DIRECTIONS: '55',
   SOURCES: '59',
+  USERS: 'users',
 } as const;
 
 // --- Rate limiting for password checks ---
@@ -280,9 +282,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Получаем всех пользователей из каталога 64 (Пользователи АТС)
+      // Получаем всех пользователей из каталога users (Пользователи АТС)
       const usersRes = await fetch(
-        `${BASE_URL}/api/v1/catalogs/64/records?count=500`,
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records?count=500`,
         { headers: authHeaders }
       );
       if (!usersRes.ok) {
@@ -340,7 +342,7 @@ Deno.serve(async (req) => {
 
       // Обновляем last_login в Bpium
       fetch(
-        `${BASE_URL}/api/v1/catalogs/64/records/${found.id}`,
+        `${BASE_URL}/api/v1/catalogs/${CATALOG.USERS}/records/${found.id}`,
         {
           method: 'PATCH',
           headers: authHeaders,
