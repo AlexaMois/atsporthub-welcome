@@ -83,7 +83,7 @@ export default function PortalLayout() {
         <div className="min-h-screen flex w-full bg-background">
           <PortalSidebar roleName={roleName} />
           <SidebarInset>
-            <PortalHeader onLogout={handleLogout} displayName={displayName} roleName={isUserSession && userRoles.length > 0 ? userRoles.join(", ") : undefined} />
+            <PortalHeader onLogout={handleLogout} displayName={displayName} roleName={userRoles.length > 0 ? userRoles.join(", ") : undefined} />
             {showWelcome && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>
