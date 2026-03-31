@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalProvider } from "@/lib/portal-context";
+import { safeJsonParse } from "@/lib/api";
 import { PortalSidebar } from "./PortalSidebar";
 import { PortalBreadcrumb } from "./PortalBreadcrumb";
 import atsLogo from "@/assets/ats-logo.jpg";
