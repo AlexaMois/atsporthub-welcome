@@ -34,7 +34,7 @@ const BPIUM_FIELDS = {
   DATE: '16',
   TAGS: '17',
   VERSION: '18',
-  CHECKLIST: '19',
+  CHECKLIST: '19', // reserved for future "ознакомление" feature
   SUMMARY_CACHE: '20',
 } as const;
 
