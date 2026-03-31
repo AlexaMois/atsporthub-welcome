@@ -24,7 +24,6 @@ const PasswordPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ password }),
       });
