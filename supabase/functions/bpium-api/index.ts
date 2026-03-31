@@ -6,7 +6,7 @@ const ALLOWED_ORIGINS = [
 function isAllowedOrigin(origin: string): boolean {
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   // Allow all *.lovable.app subdomains (preview URLs)
-  if (/^https:\/\/[a-z0-9\-]+\.lovable\.app$/.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9\-]+\.(lovable\.app|lovableproject\.com)$/.test(origin)) return true;
   return false;
 }
 

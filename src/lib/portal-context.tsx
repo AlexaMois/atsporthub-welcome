@@ -25,7 +25,7 @@ const PRIVILEGED_ROLES = [
 
 const fetchAction = async (action: string) => {
   const res = await fetch(`${FUNC_URL}?action=${action}`, {
-    headers: { apikey: ANON_KEY, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
   });
   if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
   return res.json();
