@@ -25,7 +25,6 @@ const ProtectedRoute = ({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: ANON_KEY,
       },
       body: JSON.stringify({ token }),
     })
