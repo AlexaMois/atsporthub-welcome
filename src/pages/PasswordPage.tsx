@@ -4,7 +4,7 @@ import { Lock, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { FUNC_URL, SUPABASE_ANON_KEY } from "@/lib/config";
+import { FUNC_URL } from "@/lib/config";
 
 const PasswordPage = () => {
   const navigate = useNavigate();
@@ -24,7 +24,6 @@ const PasswordPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ password }),
       });
