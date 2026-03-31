@@ -54,17 +54,12 @@ function PortalHeader({ onLogout, displayName, roleName }: { onLogout: () => voi
 export default function PortalLayout() {
   const navigate = useNavigate();
 
-  // Определяем режим: директор или обычный сотрудник
-  const isDirector = Boolean(sessionStorage.getItem("director_token"));
-  const userToken = sessionStorage.getItem("user_token");
+  // Всё через единую сессию user_token
   const userFio = sessionStorage.getItem("user_fio") ?? "";
   const userRoles: string[] = safeJsonParse<string[]>(sessionStorage.getItem("user_roles"), []);
 
-  // roleName: первая роль сотрудника (если единственная)
   const roleName = userRoles.length === 1 ? userRoles[0] : undefined;
-
-  const isUserSession = Boolean(userToken);
-  const displayName = userFio || (isDirector ? "Директор" : "");
+  const displayName = userFio || "";
 
   const [showWelcome, setShowWelcome] = useState(
     () => sessionStorage.getItem("welcome_shown") !== "true"
@@ -75,7 +70,6 @@ export default function PortalLayout() {
   }, [showWelcome]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("director_token");
     sessionStorage.removeItem("user_token");
     sessionStorage.removeItem("user_fio");
     sessionStorage.removeItem("user_roles");
@@ -84,12 +78,12 @@ export default function PortalLayout() {
   };
 
   return (
-    <PortalProvider roleName={roleName} userRoles={isUserSession ? userRoles : undefined}>
+    <PortalProvider roleName={roleName} userRoles={userRoles.length > 0 ? userRoles : undefined}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <PortalSidebar roleName={roleName} />
           <SidebarInset>
-            <PortalHeader onLogout={handleLogout} displayName={displayName} roleName={isUserSession && userRoles.length > 0 ? userRoles.join(", ") : undefined} />
+            <PortalHeader onLogout={handleLogout} displayName={displayName} roleName={userRoles.length > 0 ? userRoles.join(", ") : undefined} />
             {showWelcome && (
               <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
                 <div>
