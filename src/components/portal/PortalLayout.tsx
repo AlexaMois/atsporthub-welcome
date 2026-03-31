@@ -70,7 +70,6 @@ export default function PortalLayout() {
   }, [showWelcome]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("director_token");
     sessionStorage.removeItem("user_token");
     sessionStorage.removeItem("user_fio");
     sessionStorage.removeItem("user_roles");
