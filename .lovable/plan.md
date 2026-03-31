@@ -1,48 +1,18 @@
 
 
-## Проблема
+## Plan: Update PROJECT_KNOWLEDGE.md and README.md
 
-Вход не работает потому что фронтенд бьёт в **старый** backend:
-```
-POST https://hvsighjpcycwoqpmuvga.supabase.co/functions/v1/bpium-api → Failed to fetch
-```
+### docs/PROJECT_KNOWLEDGE.md changes:
+1. **Routes section** — remove `/login/director`, update `/dashboard/director` description to say "protected by UserProtectedRoute, JWT from verify-user"
+2. **Auth Flow** — remove "Director" subsection (password-based), replace with unified flow: all users (including director) log in by phone; director is routed to `/dashboard/director` based on role
+3. **Security** — remove mentions of rate limiting on password attempts and timing-safe password comparison (no longer relevant)
 
-Правильный URL должен быть:
-```
-https://piivkjefugxyagwxriok.supabase.co/functions/v1/bpium-api
-```
+### README.md changes:
+1. **Architecture** — replace `PasswordPage.tsx` and `ProtectedRoute.tsx` with `LoginPage.tsx` and `UserProtectedRoute.tsx`
+2. **Routes table** — remove `/login/director`, update `/` to "Вход по номеру телефона", add `/portal` and `/portal/doc/:docId`
+3. **Security** — replace `ProtectedRoute` mention with `UserProtectedRoute`, note unified phone auth
 
-### Причина
-
-В секретах проекта есть **вручную добавленные** `VITE_SUPABASE_URL` и `VITE_SUPABASE_PUBLISHABLE_KEY`, которые указывают на старый проект `hvsighjpcycwoqpmuvga`. Эти секреты перезаписывают автогенерированный `.env` файл текущего Cloud-проекта.
-
-### План исправления
-
-**1 шаг — удалить лишние секреты**
-
-Удалить из секретов проекта:
-- `VITE_SUPABASE_URL` (ручной, указывает на старый проект)
-- `VITE_SUPABASE_PUBLISHABLE_KEY` (ручной, ключ старого проекта)
-- `VITE_SUPABASE_PROJECT_ID` (не используется)
-- `VITE_DIRECTOR_PASSWORD` (заменён на `DIRECTOR_PASSWORD`)
-
-После удаления Lovable Cloud автоматически подставит правильные значения из текущего проекта `piivkjefugxyagwxriok`.
-
-**2 шаг — проверить вход**
-
-После пересборки:
-- Вход по телефону `89937217367` → запрос уйдёт на правильный backend
-- Вход директора по паролю → тоже на правильный backend
-
-### Что затронуто
-
-```text
-Секреты (удалить):
-  VITE_SUPABASE_URL
-  VITE_SUPABASE_PUBLISHABLE_KEY
-  VITE_SUPABASE_PROJECT_ID
-  VITE_DIRECTOR_PASSWORD
-
-Код: без изменений
-```
+### Files affected:
+- `docs/PROJECT_KNOWLEDGE.md`
+- `README.md`
 
