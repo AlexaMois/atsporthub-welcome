@@ -21,7 +21,7 @@ const PdfViewer = ({ url, className }: PdfViewerProps) => {
   const [loading, setLoading] = useState(true);
   const [pageLoading, setPageLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [manualLoad, setManualLoad] = useState(isMobile);
+  const [manualLoad, setManualLoad] = useState(true);
 
   const pageWidth = Math.min(500, (typeof window !== "undefined" ? window.innerWidth : 500) - 80);
 

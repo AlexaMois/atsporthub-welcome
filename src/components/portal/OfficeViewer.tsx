@@ -21,7 +21,7 @@ const OfficeViewer = ({ url, className, onDownload }: OfficeViewerProps) => {
       // Google Viewer doesn't fire onerror reliably — timeout fallback
       timerRef.current = setTimeout(() => {
         setStatus("error");
-      }, 8000);
+      }, 15000);
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -89,6 +89,7 @@ const OfficeViewer = ({ url, className, onDownload }: OfficeViewerProps) => {
       <iframe
         ref={iframeRef}
         src={viewerUrl}
+        sandbox="allow-scripts allow-same-origin"
         className={`w-full border-0 ${className ? 'h-full' : 'h-[300px]'}`}
         onLoad={handleLoad}
         onError={() => setStatus("error")}
