@@ -170,7 +170,7 @@ const DocumentPage = () => {
                 type="button"
                 variant="outline"
                 onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
-                className="w-full gap-2 hover:bg-primary hover:text-white transition-colors"
+                className="w-full min-h-[44px] gap-2 hover:bg-primary hover:text-white transition-colors"
               >
                 <Download className="w-4 h-4" /> Скачать
               </Button>
