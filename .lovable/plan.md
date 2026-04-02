@@ -1,37 +1,43 @@
 
-## Plan: Migrate AI Summary from Perplexity to Lovable AI Gateway
 
-### Problem
-The "Создать саммари ИИ" button fails with "PERPLEXITY_API_KEY not configured". The edge function uses the Perplexity API which is not configured.
+## Анализ мобильной версии по коду
 
-### Fix
-Update `supabase/functions/bpium-api/index.ts` lines 540-572 to use the Lovable AI Gateway instead of Perplexity.
+### ✅ Что работает хорошо
 
-### Changes (single file)
+1. **Сайдбар** — использует Shadcn Sidebar с `setOpenMobile(false)` при выборе пункта — автозакрытие на мобильных работает. Кнопка «Меню» в хедере видна с текстом на мобильных (`md:hidden`).
 
-**`supabase/functions/bpium-api/index.ts`** — Replace the AI call section:
+2. **Список документов** — поиск на всю ширину, статистика `grid-cols-2` (компактно), фильтр-чипы с `min-h-[44px]` (соответствует гайдлайну 44px tap target), текст `text-[15px]` на мобильных.
 
-```typescript
-// Before (lines 540-564):
-const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
-if (!PERPLEXITY_API_KEY) throw new Error('PERPLEXITY_API_KEY not configured');
-const aiRes = await fetch('https://api.perplexity.ai/chat/completions', {
-  headers: { 'Authorization': `Bearer ${PERPLEXITY_API_KEY}`, ... },
-  body: JSON.stringify({ model: 'sonar', ... })
-});
+3. **PdfViewer** — `manualLoad = true` для всех устройств, ширина страницы `Math.min(500, window.innerWidth - 80)` адаптируется.
 
-// After:
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
-const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-  headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, ... },
-  body: JSON.stringify({ model: 'google/gemini-2.5-flash', ... })
-});
-```
+4. **OfficeViewer** — `idle` → кнопка → загрузка. Sandbox на iframe. Fallback с кнопками «Открыть/Скачать».
 
-- Replace `PERPLEXITY_API_KEY` → `LOVABLE_API_KEY` (auto-provisioned, no user action needed)
-- Replace API URL → `https://ai.gateway.lovable.dev/v1/chat/completions`
-- Replace model `sonar` → `google/gemini-2.5-flash` (good balance of speed/quality for summarization)
-- Update error messages from "Perplexity" → "AI gateway"
-- Keep the same system prompt and response parsing (OpenAI-compatible format)
-- Add handling for 429 (rate limit) and 402 (payment required) errors
+5. **Навигация Предыдущий/Следующий** — кнопки всегда видны в sticky-блоке внизу левой колонки.
+
+6. **ИИ-ассистент Sheet** — открывается `side="bottom"` на мобильных.
+
+### ⚠️ Найденные проблемы
+
+#### 1. DocumentPage: вертикальная прокрутка на мобильных
+Контейнер `flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden` на мобильных стекает колонки вертикально, но `overflow-hidden` на родителе + `min-h-[400px]` на правой панели (preview) может обрезать контент. На мобильных нужен `overflow-y-auto` на внешнем контейнере.
+
+#### 2. Кнопки «Открыть файл» / «Скачать» — нет min-height 44px
+Кнопки действий `Button` без явного `min-h-[44px]` — по умолчанию shadcn Button ~36px, что меньше рекомендуемого 44px для мобильных.
+
+#### 3. Кнопки «Предыдущий/Следующий» — `size="sm"` слишком малы для тач
+`size="sm"` = ~32px высота, ниже минимума 44px.
+
+#### 4. Табы «Предпросмотр / Саммари ИИ» — кастомные кнопки без min-height
+`px-4 py-2.5` ≈ 36px, ниже 44px.
+
+### Предлагаемые исправления
+
+**Файл: `src/pages/portal/DocumentPage.tsx`**
+- Внешний контейнер: на мобильных заменить `overflow-hidden` на `overflow-y-auto` (только для `flex-col` на `<md`)
+- Кнопки «Открыть файл» / «Скачать»: добавить `min-h-[44px]`
+- Кнопки «Предыдущий/Следующий»: добавить `min-h-[44px] min-w-[44px]`
+- Табы: добавить `min-h-[44px]`
+- Правая панель: убрать `min-h-[400px]` на мобильных → `md:min-h-0 min-h-[300px]`
+
+Эти изменения минимальны и затрагивают только классы в одном файле.
+
