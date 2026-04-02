@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ExternalLink, Download, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { openFileInViewer } from "@/utils/fileUtils";
 
 interface OfficeViewerProps {
   url: string;
