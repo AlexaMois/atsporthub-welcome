@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import PdfViewer from "@/components/portal/PdfViewer";
 import OfficeViewer from "@/components/portal/OfficeViewer";
-import { handleDownload } from "@/utils/fileUtils";
+import { handleDownload, openFileInViewer } from "@/utils/fileUtils";
 import {
   usePortal,
   getStatusId,
