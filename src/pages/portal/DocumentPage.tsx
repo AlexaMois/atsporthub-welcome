@@ -228,7 +228,7 @@ const DocumentPage = () => {
           </button>
           <button
             type="button"
-            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`px-4 py-2.5 min-h-[44px] text-sm font-medium transition-colors ${
               activeTab === 'summary'
                 ? 'border-b-2 border-primary text-primary'
                 : 'text-muted-foreground hover:text-foreground'
