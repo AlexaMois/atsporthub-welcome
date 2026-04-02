@@ -89,6 +89,7 @@ const OfficeViewer = ({ url, className, onDownload }: OfficeViewerProps) => {
       <iframe
         ref={iframeRef}
         src={viewerUrl}
+        sandbox="allow-scripts allow-same-origin"
         className={`w-full border-0 ${className ? 'h-full' : 'h-[300px]'}`}
         onLoad={handleLoad}
         onError={() => setStatus("error")}
