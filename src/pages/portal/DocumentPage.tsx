@@ -116,7 +116,7 @@ const DocumentPage = () => {
   return (
     <div
       key={docId}
-      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden"
+      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden"
     >
       {/* Left column */}
       <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink">
@@ -162,7 +162,7 @@ const DocumentPage = () => {
               <Button
                 type="button"
                 onClick={() => window.open(fileUrl, "_blank")}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                className="w-full min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
               >
                 <ExternalLink className="w-4 h-4" /> Открыть файл
               </Button>
@@ -170,7 +170,7 @@ const DocumentPage = () => {
                 type="button"
                 variant="outline"
                 onClick={() => handleDownload(fileUrl, doc.title, String(doc.id))}
-                className="w-full gap-2 hover:bg-primary hover:text-white transition-colors"
+                className="w-full min-h-[44px] gap-2 hover:bg-primary hover:text-white transition-colors"
               >
                 <Download className="w-4 h-4" /> Скачать
               </Button>
@@ -187,7 +187,7 @@ const DocumentPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(`${basePath}/doc/${prevDoc.id}`)}
-                className="gap-1"
+                className="gap-1 min-h-[44px] min-w-[44px]"
               >
                 <ArrowLeft className="w-4 h-4" /> Предыдущий
               </Button>
@@ -198,7 +198,7 @@ const DocumentPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
-                className="gap-1"
+                className="gap-1 min-h-[44px] min-w-[44px]"
               >
                 Следующий <ArrowRight className="w-4 h-4" />
               </Button>
@@ -212,12 +212,12 @@ const DocumentPage = () => {
       </div>
 
       {/* Right panel */}
-      <div className="w-full md:w-1/2 flex flex-col overflow-hidden min-h-[400px] md:min-h-0">
+      <div className="w-full md:w-1/2 flex flex-col overflow-hidden min-h-[300px] md:min-h-0">
         {/* Tab bar */}
         <div className="flex border-b shrink-0">
           <button
             type="button"
-            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`px-4 py-2.5 min-h-[44px] text-sm font-medium transition-colors ${
               activeTab === 'preview'
                 ? 'border-b-2 border-primary text-primary'
                 : 'text-muted-foreground hover:text-foreground'
@@ -228,7 +228,7 @@ const DocumentPage = () => {
           </button>
           <button
             type="button"
-            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`px-4 py-2.5 min-h-[44px] text-sm font-medium transition-colors ${
               activeTab === 'summary'
                 ? 'border-b-2 border-primary text-primary'
                 : 'text-muted-foreground hover:text-foreground'
