@@ -60,7 +60,7 @@ const OfficeViewer = ({ url, className, onDownload }: OfficeViewerProps) => {
           <div className="flex gap-3">
             <Button
               size="sm"
-              onClick={() => window.open(url, "_blank")}
+              onClick={() => openFileInViewer(url)}
               className="gap-2"
             >
               <ExternalLink className="w-4 h-4" /> Открыть

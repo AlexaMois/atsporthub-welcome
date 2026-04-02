@@ -1,3 +1,17 @@
+export const isPdfUrl = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
+export const isOfficeUrl = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
+
+export const openFileInViewer = (url: string): void => {
+  if (isPdfUrl(url) || isOfficeUrl(url)) {
+    window.open(
+      `https://docs.google.com/viewer?url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  } else {
+    window.open(url, "_blank");
+  }
+};
+
 export const sanitizeFilename = (name: string): string => {
   return name
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
