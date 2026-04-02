@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ExternalLink, Download, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { openFileInViewer } from "@/utils/fileUtils";
 
 interface OfficeViewerProps {
   url: string;
@@ -59,7 +60,7 @@ const OfficeViewer = ({ url, className, onDownload }: OfficeViewerProps) => {
           <div className="flex gap-3">
             <Button
               size="sm"
-              onClick={() => window.open(url, "_blank")}
+              onClick={() => openFileInViewer(url)}
               className="gap-2"
             >
               <ExternalLink className="w-4 h-4" /> Открыть

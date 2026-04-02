@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import PdfViewer from "@/components/portal/PdfViewer";
 import OfficeViewer from "@/components/portal/OfficeViewer";
-import { handleDownload } from "@/utils/fileUtils";
+import { handleDownload, openFileInViewer } from "@/utils/fileUtils";
 import {
   usePortal,
   getStatusId,
@@ -161,7 +161,7 @@ const DocumentPage = () => {
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                onClick={() => window.open(fileUrl, "_blank")}
+                onClick={() => openFileInViewer(fileUrl)}
                 className="w-full min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
               >
                 <ExternalLink className="w-4 h-4" /> Открыть файл
