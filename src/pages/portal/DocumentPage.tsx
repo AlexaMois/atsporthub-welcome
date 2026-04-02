@@ -198,7 +198,7 @@ const DocumentPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(`${basePath}/doc/${nextDoc.id}`)}
-                className="gap-1"
+                className="gap-1 min-h-[44px] min-w-[44px]"
               >
                 Следующий <ArrowRight className="w-4 h-4" />
               </Button>
