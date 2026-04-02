@@ -116,7 +116,7 @@ const DocumentPage = () => {
   return (
     <div
       key={docId}
-      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden"
+      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden"
     >
       {/* Left column */}
       <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink">
