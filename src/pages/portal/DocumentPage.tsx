@@ -162,7 +162,7 @@ const DocumentPage = () => {
               <Button
                 type="button"
                 onClick={() => window.open(fileUrl, "_blank")}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                className="w-full min-h-[44px] bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
               >
                 <ExternalLink className="w-4 h-4" /> Открыть файл
               </Button>
