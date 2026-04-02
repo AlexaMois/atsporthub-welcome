@@ -1,43 +1,46 @@
 
 
-## Анализ мобильной версии по коду
+## Проблема
 
-### ✅ Что работает хорошо
+Кнопка «Открыть файл» вызывает `window.open(fileUrl, "_blank")` — открывает прямую ссылку на файл из Bpium. Сервер Bpium отдаёт файл с заголовком `Content-Disposition: attachment`, поэтому браузер скачивает файл вместо отображения.
 
-1. **Сайдбар** — использует Shadcn Sidebar с `setOpenMobile(false)` при выборе пункта — автозакрытие на мобильных работает. Кнопка «Меню» в хедере видна с текстом на мобильных (`md:hidden`).
+## Решение
 
-2. **Список документов** — поиск на всю ширину, статистика `grid-cols-2` (компактно), фильтр-чипы с `min-h-[44px]` (соответствует гайдлайну 44px tap target), текст `text-[15px]` на мобильных.
+Для PDF и Office-файлов открывать не прямую ссылку, а веб-просмотрщик:
 
-3. **PdfViewer** — `manualLoad = true` для всех устройств, ширина страницы `Math.min(500, window.innerWidth - 80)` адаптируется.
+- **PDF** → Google Docs Viewer: `https://docs.google.com/viewer?url=ENCODED_URL&embedded=false`
+- **Office (docx, xlsx, pptx)** → тот же Google Docs Viewer (он поддерживает Office-форматы)
+- **Остальные файлы** → `window.open(url, "_blank")` как сейчас (fallback)
 
-4. **OfficeViewer** — `idle` → кнопка → загрузка. Sandbox на iframe. Fallback с кнопками «Открыть/Скачать».
+## Изменения
 
-5. **Навигация Предыдущий/Следующий** — кнопки всегда видны в sticky-блоке внизу левой колонки.
+### 1. `src/utils/fileUtils.ts` — новая функция `openFileInViewer`
 
-6. **ИИ-ассистент Sheet** — открывается `side="bottom"` на мобильных.
+```ts
+export const openFileInViewer = (url: string): void => {
+  if (isPdfUrl(url) || isOfficeUrl(url)) {
+    window.open(
+      `https://docs.google.com/viewer?url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  } else {
+    window.open(url, "_blank");
+  }
+};
 
-### ⚠️ Найденные проблемы
+export const isPdfUrl = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
+export const isOfficeUrl = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
+```
 
-#### 1. DocumentPage: вертикальная прокрутка на мобильных
-Контейнер `flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden` на мобильных стекает колонки вертикально, но `overflow-hidden` на родителе + `min-h-[400px]` на правой панели (preview) может обрезать контент. На мобильных нужен `overflow-y-auto` на внешнем контейнере.
+### 2. `src/pages/portal/DocumentPage.tsx` — использовать `openFileInViewer`
 
-#### 2. Кнопки «Открыть файл» / «Скачать» — нет min-height 44px
-Кнопки действий `Button` без явного `min-h-[44px]` — по умолчанию shadcn Button ~36px, что меньше рекомендуемого 44px для мобильных.
+Заменить `window.open(fileUrl, "_blank")` в кнопке «Открыть файл» на `openFileInViewer(fileUrl)`.
 
-#### 3. Кнопки «Предыдущий/Следующий» — `size="sm"` слишком малы для тач
-`size="sm"` = ~32px высота, ниже минимума 44px.
+Также обновить кнопку в `OfficeViewer` error fallback.
 
-#### 4. Табы «Предпросмотр / Саммари ИИ» — кастомные кнопки без min-height
-`px-4 py-2.5` ≈ 36px, ниже 44px.
+### 3. `src/components/portal/OfficeViewer.tsx` — fallback-кнопка «Открыть»
 
-### Предлагаемые исправления
+Заменить `window.open(url, "_blank")` на `openFileInViewer(url)`.
 
-**Файл: `src/pages/portal/DocumentPage.tsx`**
-- Внешний контейнер: на мобильных заменить `overflow-hidden` на `overflow-y-auto` (только для `flex-col` на `<md`)
-- Кнопки «Открыть файл» / «Скачать»: добавить `min-h-[44px]`
-- Кнопки «Предыдущий/Следующий»: добавить `min-h-[44px] min-w-[44px]`
-- Табы: добавить `min-h-[44px]`
-- Правая панель: убрать `min-h-[400px]` на мобильных → `md:min-h-0 min-h-[300px]`
-
-Эти изменения минимальны и затрагивают только классы в одном файле.
+Итого: 3 файла, минимальные изменения. Файл всегда будет открываться для просмотра в Google Docs Viewer в новой вкладке.
 
