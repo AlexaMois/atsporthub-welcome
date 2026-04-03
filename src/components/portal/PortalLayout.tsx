@@ -62,11 +62,11 @@ export default function PortalLayout() {
   const displayName = userFio || "";
 
   const [showWelcome, setShowWelcome] = useState(
-    () => sessionStorage.getItem("welcome_shown") !== "true"
+    () => localStorage.getItem("welcome_shown") !== "true"
   );
 
   useEffect(() => {
-    if (showWelcome) sessionStorage.setItem("welcome_shown", "true");
+    if (showWelcome) localStorage.setItem("welcome_shown", "true");
   }, [showWelcome]);
 
   const handleLogout = () => {
