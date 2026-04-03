@@ -10,7 +10,7 @@ const UserProtectedRoute = ({ children }: UserProtectedRouteProps) => {
   const [status, setStatus] = useState<"loading" | "valid" | "invalid">("loading");
 
   useEffect(() => {
-    const token = sessionStorage.getItem("user_token");
+    const token = localStorage.getItem("user_token");
     if (!token) {
       setStatus("invalid");
       return;
@@ -20,9 +20,9 @@ const UserProtectedRoute = ({ children }: UserProtectedRouteProps) => {
       if (result.ok && result.data?.valid) {
         setStatus("valid");
       } else {
-        sessionStorage.removeItem("user_token");
-        sessionStorage.removeItem("user_fio");
-        sessionStorage.removeItem("user_roles");
+        localStorage.removeItem("user_token");
+        localStorage.removeItem("user_fio");
+        localStorage.removeItem("user_roles");
         setStatus("invalid");
       }
     });

@@ -24,10 +24,10 @@ const LoginPage = () => {
     if (result.error) {
       setError(result.error);
     } else if (result.ok && result.data?.ok && result.data?.token) {
-      sessionStorage.setItem("user_token", result.data.token);
-      sessionStorage.setItem("user_fio", result.data.fio ?? "");
+      localStorage.setItem("user_token", result.data.token);
+      localStorage.setItem("user_fio", result.data.fio ?? "");
       const roles: string[] = result.data.roles ?? [];
-      sessionStorage.setItem("user_roles", JSON.stringify(roles));
+      localStorage.setItem("user_roles", JSON.stringify(roles));
       // Директор → отдельный раздел
       const isDirector = roles.some((r: string) => r.toLowerCase().includes("генеральный директор"));
       navigate(isDirector ? "/dashboard/director" : "/portal");
