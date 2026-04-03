@@ -2,45 +2,33 @@
 
 ## Проблема
 
-Кнопка «Открыть файл» вызывает `window.open(fileUrl, "_blank")` — открывает прямую ссылку на файл из Bpium. Сервер Bpium отдаёт файл с заголовком `Content-Disposition: attachment`, поэтому браузер скачивает файл вместо отображения.
+Счётчики показывают правильные данные, но логика подсчёта "Новых за месяц" использует неправильное поле:
+
+- **"На согласовании" = 0** — корректно: в Bpium сейчас нет документов со статусом `["2"]`. Все 34 — со статусом `["3"]` (Утверждён), остальные 7 — черновики/отклонённые.
+- **"Новых за месяц" = 0** — используется поле `date` (поле 16, "Дата внесения"), которое заполняется вручную и у большинства документов стоит февраль 2026. Нужно использовать `createdAt` — автоматическую дату создания записи в Bpium.
 
 ## Решение
 
-Для PDF и Office-файлов открывать не прямую ссылку, а веб-просмотрщик:
+### `src/lib/portal-context.tsx` — изменить подсчёт "Новых за месяц"
 
-- **PDF** → Google Docs Viewer: `https://docs.google.com/viewer?url=ENCODED_URL&embedded=false`
-- **Office (docx, xlsx, pptx)** → тот же Google Docs Viewer (он поддерживает Office-форматы)
-- **Остальные файлы** → `window.open(url, "_blank")` как сейчас (fallback)
+Заменить `d.date` на `d.createdAt` в блоке подсчёта статистики:
 
-## Изменения
+```typescript
+// Было:
+if (d.date) {
+  const dt = new Date(d.date);
+  if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) newThisMonth++;
+}
 
-### 1. `src/utils/fileUtils.ts` — новая функция `openFileInViewer`
-
-```ts
-export const openFileInViewer = (url: string): void => {
-  if (isPdfUrl(url) || isOfficeUrl(url)) {
-    window.open(
-      `https://docs.google.com/viewer?url=${encodeURIComponent(url)}`,
-      "_blank"
-    );
-  } else {
-    window.open(url, "_blank");
-  }
-};
-
-export const isPdfUrl = (url: string): boolean => /\.pdf(\?|$)/i.test(url);
-export const isOfficeUrl = (url: string): boolean => /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url);
+// Станет:
+const dateStr = d.createdAt || d.date;
+if (dateStr) {
+  const dt = new Date(dateStr);
+  if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) newThisMonth++;
+}
 ```
 
-### 2. `src/pages/portal/DocumentPage.tsx` — использовать `openFileInViewer`
+Поле `createdAt` уже приходит в ответе API (строка 617 edge function: `createdAt: r.createdAt`), менять бэкенд не нужно.
 
-Заменить `window.open(fileUrl, "_blank")` в кнопке «Открыть файл» на `openFileInViewer(fileUrl)`.
-
-Также обновить кнопку в `OfficeViewer` error fallback.
-
-### 3. `src/components/portal/OfficeViewer.tsx` — fallback-кнопка «Открыть»
-
-Заменить `window.open(url, "_blank")` на `openFileInViewer(url)`.
-
-Итого: 3 файла, минимальные изменения. Файл всегда будет открываться для просмотра в Google Docs Viewer в новой вкладке.
+**Итого**: 1 файл, 3 строки изменений.
 
