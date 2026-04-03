@@ -6,6 +6,16 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import UserProtectedRoute from "@/components/UserProtectedRoute";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+
+function LoginRedirect() {
+  const token = localStorage.getItem("user_token");
+  if (token) {
+    const roles: string[] = JSON.parse(localStorage.getItem("user_roles") || "[]");
+    const isDirector = roles.some((r) => r.toLowerCase().includes("генеральный директор"));
+    return <Navigate to={isDirector ? "/dashboard/director" : "/portal"} replace />;
+  }
+  return <LoginPage />;
+}
 const PortalLayout = lazy(() => import("./components/portal/PortalLayout"));
 const DocumentListPage = lazy(() => import("./pages/portal/DocumentListPage"));
 const DocumentPage = lazy(() => import("./pages/portal/DocumentPage"));
@@ -21,7 +31,7 @@ const App = () => (
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<LoginRedirect />} />
 
             {/* Портал сотрудников */}
             <Route
