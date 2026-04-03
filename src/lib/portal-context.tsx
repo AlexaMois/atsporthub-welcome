@@ -170,8 +170,9 @@ export const PortalProvider = ({ children, roleName, userRoles }: { children: Re
       const sid = getStatusId(d);
       if (sid === 3) approved++;
       if (sid === 2) inReview++;
-      if (d.date) {
-        const dt = new Date(d.date);
+      const dateStr = d.createdAt || d.date;
+      if (dateStr) {
+        const dt = new Date(dateStr);
         if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) newThisMonth++;
       }
     });
