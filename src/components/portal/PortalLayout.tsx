@@ -55,8 +55,8 @@ export default function PortalLayout() {
   const navigate = useNavigate();
 
   // Всё через единую сессию user_token
-  const userFio = sessionStorage.getItem("user_fio") ?? "";
-  const userRoles: string[] = safeJsonParse<string[]>(sessionStorage.getItem("user_roles"), []);
+  const userFio = localStorage.getItem("user_fio") ?? "";
+  const userRoles: string[] = safeJsonParse<string[]>(localStorage.getItem("user_roles"), []);
 
   const roleName = userRoles.length === 1 ? userRoles[0] : undefined;
   const displayName = userFio || "";
