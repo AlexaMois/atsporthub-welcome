@@ -2,33 +2,25 @@
 
 ## Проблема
 
-Счётчики показывают правильные данные, но логика подсчёта "Новых за месяц" использует неправильное поле:
-
-- **"На согласовании" = 0** — корректно: в Bpium сейчас нет документов со статусом `["2"]`. Все 34 — со статусом `["3"]` (Утверждён), остальные 7 — черновики/отклонённые.
-- **"Новых за месяц" = 0** — используется поле `date` (поле 16, "Дата внесения"), которое заполняется вручную и у большинства документов стоит февраль 2026. Нужно использовать `createdAt` — автоматическую дату создания записи в Bpium.
+Сейчас токен и данные пользователя хранятся в `sessionStorage` — это значит, что при закрытии вкладки/браузера всё стирается и нужно заново вводить номер телефона.
 
 ## Решение
 
-### `src/lib/portal-context.tsx` — изменить подсчёт "Новых за месяц"
+Заменить `sessionStorage` на `localStorage` во всех местах, где хранятся `user_token`, `user_fio`, `user_roles` и `welcome_shown`. Это позволит сохранять сессию между закрытиями браузера. При следующем визите токен будет проверен через `verify-token` — если он ещё валиден, пользователь попадёт сразу в портал без повторного ввода номера.
 
-Заменить `d.date` на `d.createdAt` в блоке подсчёта статистики:
+## Файлы для изменения (4 файла)
 
-```typescript
-// Было:
-if (d.date) {
-  const dt = new Date(d.date);
-  if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) newThisMonth++;
-}
+### 1. `src/pages/LoginPage.tsx`
+Заменить все `sessionStorage.setItem(...)` на `localStorage.setItem(...)`.
 
-// Станет:
-const dateStr = d.createdAt || d.date;
-if (dateStr) {
-  const dt = new Date(dateStr);
-  if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) newThisMonth++;
-}
-```
+### 2. `src/components/UserProtectedRoute.tsx`
+Заменить все `sessionStorage.getItem(...)` и `sessionStorage.removeItem(...)` на `localStorage`.
 
-Поле `createdAt` уже приходит в ответе API (строка 617 edge function: `createdAt: r.createdAt`), менять бэкенд не нужно.
+### 3. `src/components/portal/PortalLayout.tsx`
+Заменить все `sessionStorage.getItem(...)` и `sessionStorage.removeItem(...)` на `localStorage` (для `user_token`, `user_fio`, `user_roles`, `welcome_shown`).
 
-**Итого**: 1 файл, 3 строки изменений.
+### 4. `src/App.tsx`
+Добавить авто-редирект: если пользователь на `/login` и в `localStorage` уже есть `user_token` — перенаправлять сразу в портал (проверка токена произойдёт в `UserProtectedRoute`).
+
+Итого: замена `sessionStorage` → `localStorage` в 4 файлах, ~15 строк изменений. Никаких изменений бэкенда не требуется.
 
