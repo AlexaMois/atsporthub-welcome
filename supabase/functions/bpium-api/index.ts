@@ -653,7 +653,7 @@ Deno.serve(async (req) => {
       }
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 120_000);
+      const timer = setTimeout(() => controller.abort(), 55_000);
       try {
         const ragRes = await fetch(`${ragUrl}/ask`, {
           method: 'POST',
@@ -674,9 +674,13 @@ Deno.serve(async (req) => {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
-      } catch (ragErr) {
+      } catch (ragErr: any) {
         console.error('RAG request failed:', ragErr);
-        return new Response(JSON.stringify({ answer: 'Сервис ИИ временно недоступен. Попробуйте позже.' }), {
+        const isAbort = ragErr?.name === 'AbortError';
+        const answer = isAbort
+          ? 'Вопрос слишком сложный, попробуйте переформулировать короче.'
+          : 'Сервис ИИ временно недоступен. Попробуйте позже.';
+        return new Response(JSON.stringify({ answer }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
