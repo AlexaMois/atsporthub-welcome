@@ -60,7 +60,39 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
 
 export function PortalSidebar({ roleName }: { roleName?: string }) {
   const { filterOptions, activeFilters, setExclusiveFilter, clearFilters, chipCounts } = usePortal();
-  const [aiOpen, setAiOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  const handleSend = async () => {
+    const q = question.trim();
+    if (!q || isLoading) return;
+    setMessages((prev) => [...prev, { role: "user", text: q }]);
+    setQuestion("");
+    setIsLoading(true);
+    try {
+      const { answer } = await askRag(q);
+      setMessages((prev) => [...prev, { role: "assistant", text: answer || "Пустой ответ" }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: "assistant", text: err?.message || "Не удалось получить ответ" }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
