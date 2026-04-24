@@ -18,15 +18,19 @@ export interface ApiResult<T = unknown> {
 export async function apiCall<T = any>(
   action: string,
   body?: Record<string, unknown>,
-  method: "GET" | "POST" = "POST"
+  method: "GET" | "POST" = "POST",
+  token?: string
 ): Promise<ApiResult<T>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetch(`${FUNC_URL}?action=${action}`, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
