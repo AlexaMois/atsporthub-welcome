@@ -77,7 +77,7 @@ const LoginPage = () => {
               <p className="text-sm text-destructive mt-2">{error}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={loading || !phone.trim()}>
+          <Button type="submit" className="w-full h-12 text-base" disabled={loading || !phone.trim()}>
             {loading ? "Проверяем..." : "Войти"}
           </Button>
         </form>
