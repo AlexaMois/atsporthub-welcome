@@ -62,7 +62,7 @@ const DocumentListPage = () => {
         </div>
       ) : (
         <>
-          <h1 className="text-3xl font-bold text-foreground mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">
             {isEmployeePortal ? (isAllEmployeesMode ? "Все документы" : "Документы для вас") : "Все документы"}
           </h1>
           {(isDirector || isAllEmployeesMode) && (
