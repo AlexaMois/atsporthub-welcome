@@ -16,32 +16,34 @@ import {
 function PortalHeader({ onLogout, displayName, roleName }: { onLogout: () => void; displayName?: string; roleName?: string }) {
   const { toggleSidebar } = useSidebar();
   return (
-    <header className="h-14 bg-primary flex items-center justify-between px-4 shrink-0">
-      <div className="flex items-center gap-2">
+    <header className="h-14 bg-primary flex items-center justify-between px-3 sm:px-4 shrink-0 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         <Button
           variant="ghost"
           size="sm"
-          className="text-white hover:bg-white/20 bg-white/15 rounded-lg gap-1.5 h-9 px-3"
+          className="text-white hover:bg-white/20 bg-white/15 rounded-lg h-9 w-9 sm:w-auto sm:px-3 sm:gap-1.5 p-0 shrink-0"
           onClick={toggleSidebar}
+          aria-label="Меню"
         >
           <Menu className="h-5 w-5" />
-          <span className="text-sm font-medium md:hidden">Меню</span>
+          <span className="text-sm font-medium hidden sm:inline">Меню</span>
         </Button>
-        <img src={atsLogo} alt="АТС" className="h-8 w-8 rounded" />
-        <span className="text-white font-semibold text-sm">АТС Портал</span>
+        <img src={atsLogo} alt="АТС" className="h-7 w-7 sm:h-8 sm:w-8 rounded shrink-0" />
+        <span className="text-white font-semibold text-sm truncate hidden min-[380px]:inline">АТС Портал</span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {displayName && (
-          <span className="text-white text-sm opacity-80 hidden md:inline">{displayName}</span>
+          <span className="text-white text-sm opacity-80 hidden md:inline truncate max-w-[200px]">{displayName}</span>
         )}
         {roleName && (
-          <span className="text-white/60 text-xs hidden lg:inline">{roleName}</span>
+          <span className="text-white/60 text-xs hidden lg:inline truncate max-w-[200px]">{roleName}</span>
         )}
         <Button
           variant="ghost"
           size="sm"
-          className="text-white hover:bg-white/20 gap-1"
+          className="text-white hover:bg-white/20 gap-1 h-9 px-2 sm:px-3"
           onClick={onLogout}
+          aria-label="Выйти"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Выйти</span>
