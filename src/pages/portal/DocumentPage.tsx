@@ -116,12 +116,12 @@ const DocumentPage = () => {
   return (
     <div
       key={docId}
-      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden"
+      className="flex flex-col md:flex-row flex-1 min-h-0 md:overflow-hidden"
     >
       {/* Left column */}
-      <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink">
-        {/* Scrollable metadata area */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 pb-2 space-y-4">
+      <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink md:min-h-0">
+        {/* Metadata area — обычный поток на мобильном, скролл только на десктопе */}
+        <div className="md:flex-1 md:min-h-0 md:overflow-y-auto p-4 sm:p-6 pb-2 space-y-4">
           <h1 className="text-xl font-bold text-foreground leading-tight">{doc.title}</h1>
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
