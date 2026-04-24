@@ -68,9 +68,33 @@ export function safeJsonParse<T>(value: string | null, fallback: T): T {
 
 export async function askRag(question: string): Promise<{ answer: string }> {
   const token = localStorage.getItem("user_token");
-  const result = await apiCall<{ answer: string }>("ask-rag", { question }, "POST", token ?? undefined);
-  if (!result.ok || !result.data) {
-    throw new Error(result.error ?? (result.data as any)?.error ?? "RAG service unavailable");
+  const MAX_ATTEMPTS = 3;
+  const RETRY_DELAY_MS = 5000;
+  const isUnavailable = (msg: string) =>
+    msg.includes("RAG service unavailable") || msg.includes("Сервис ИИ временно недоступен");
+
+  let lastError = "RAG service unavailable";
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const result = await apiCall<{ answer: string }>("ask-rag", { question }, "POST", token ?? undefined);
+
+    if (result.ok && result.data) {
+      const answer = result.data.answer ?? "";
+      if (!isUnavailable(answer)) {
+        return { answer };
+      }
+      lastError = answer;
+    } else {
+      lastError = result.error ?? (result.data as any)?.error ?? "RAG service unavailable";
+      if (!isUnavailable(lastError)) {
+        throw new Error(lastError);
+      }
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    }
   }
-  return { answer: result.data.answer };
+
+  throw new Error(lastError);
 }
