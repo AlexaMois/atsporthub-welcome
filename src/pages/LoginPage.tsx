@@ -62,13 +62,15 @@ const LoginPage = () => {
           <div>
             <Input
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               placeholder="+7 900 000 00 00"
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
                 setError(null);
               }}
-              className={error ? "border-destructive" : ""}
+              className={`text-base h-12 ${error ? "border-destructive" : ""}`}
               autoFocus
             />
             {error && (
