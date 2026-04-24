@@ -1,6 +1,6 @@
 import { FUNC_URL } from "@/lib/config";
 
-const REQUEST_TIMEOUT_MS = 15_000;
+const REQUEST_TIMEOUT_MS = 150_000;
 
 export interface ApiResult<T = unknown> {
   ok: boolean;
