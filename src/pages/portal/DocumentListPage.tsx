@@ -138,7 +138,8 @@ const DocumentListPage = () => {
                       <Link
               to={`${basePath}/doc/${doc.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
+              aria-label="Открыть документ"
             >
               <Eye className="w-4 h-4" />
             </Link>
