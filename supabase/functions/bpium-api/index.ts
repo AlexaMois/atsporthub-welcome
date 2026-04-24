@@ -622,6 +622,69 @@ Deno.serve(async (req) => {
       });
     }
 
+    // action: ask-rag — проксирует вопрос во внешний RAG-сервис
+    if (action === 'ask-rag') {
+      const authHeader = req.headers.get('Authorization') || '';
+      const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+      const jwtResult = await verifyJwt(token);
+      if (!jwtResult.valid) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const body = await req.json().catch(() => ({}));
+      const question = typeof body?.question === 'string' ? body.question.trim() : '';
+      if (!question) {
+        return new Response(JSON.stringify({ error: 'question is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const ragUrl = Deno.env.get('RAG_URL');
+      if (!ragUrl) {
+        console.error('RAG_URL is not configured');
+        return new Response(JSON.stringify({ error: 'RAG service unavailable' }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 120_000);
+      try {
+        const ragRes = await fetch(`${ragUrl}/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+          signal: controller.signal,
+        });
+        if (!ragRes.ok) {
+          const errText = await ragRes.text().catch(() => '');
+          console.error('RAG error', ragRes.status, errText);
+          return new Response(JSON.stringify({ error: 'RAG service unavailable' }), {
+            status: 502,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const data = await ragRes.json();
+        return new Response(JSON.stringify({ answer: data.answer }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (ragErr) {
+        console.error('RAG request failed:', ragErr);
+        return new Response(JSON.stringify({ error: 'RAG service unavailable' }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     if (action === 'get-roles' || action === 'get-projects' || action === 'get-directions' || action === 'get-sources') {
       const catalogId = action === 'get-roles' ? CATALOG.ROLES :
                         action === 'get-projects' ? CATALOG.PROJECTS :
