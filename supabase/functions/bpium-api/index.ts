@@ -646,8 +646,8 @@ Deno.serve(async (req) => {
       const ragUrl = Deno.env.get('RAG_URL');
       if (!ragUrl) {
         console.error('RAG_URL is not configured');
-        return new Response(JSON.stringify({ error: 'RAG service unavailable' }), {
-          status: 502,
+        return new Response(JSON.stringify({ answer: 'Сервис ИИ временно недоступен. Попробуйте позже.' }), {
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -664,8 +664,8 @@ Deno.serve(async (req) => {
         if (!ragRes.ok) {
           const errText = await ragRes.text().catch(() => '');
           console.error('RAG error', ragRes.status, errText);
-          return new Response(JSON.stringify({ error: 'RAG service unavailable' }), {
-            status: 502,
+          return new Response(JSON.stringify({ answer: 'Сервис ИИ временно недоступен. Попробуйте позже.' }), {
+            status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
@@ -676,8 +676,8 @@ Deno.serve(async (req) => {
         });
       } catch (ragErr) {
         console.error('RAG request failed:', ragErr);
-        return new Response(JSON.stringify({ error: 'RAG service unavailable' }), {
-          status: 502,
+        return new Response(JSON.stringify({ answer: 'Сервис ИИ временно недоступен. Попробуйте позже.' }), {
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } finally {
