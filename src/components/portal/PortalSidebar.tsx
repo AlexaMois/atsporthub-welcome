@@ -1,8 +1,9 @@
-import { FileText, FolderOpen, Folder, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame } from "lucide-react";
+import { FileText, FolderOpen, Folder, Compass, Users, BookOpen, Sparkles, Truck, Wrench, Radio, Shield, Stethoscope, HardHat, Zap, Warehouse, UserCog, ClipboardList, Factory, Landmark, Globe, Lightbulb, Atom, Cog, Layers, Target, Briefcase, Hash, Droplets, Flame, X, Send, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBasePath } from "@/hooks/useBasePath";
 import { usePortal, FILTER_GROUPS } from "@/lib/portal-context";
+import { askRag } from "@/lib/api";
 import {
   Sidebar,
   SidebarContent,
@@ -17,9 +18,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const ITEM_ICON_MAP: [string, LucideIcon][] = [
   ["водитель", Truck],
@@ -60,7 +60,39 @@ const GROUP_ICONS: Record<string, React.ElementType> = {
 
 export function PortalSidebar({ roleName }: { roleName?: string }) {
   const { filterOptions, activeFilters, setExclusiveFilter, clearFilters, chipCounts } = usePortal();
-  const [aiOpen, setAiOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  const handleSend = async () => {
+    const q = question.trim();
+    if (!q || isLoading) return;
+    setMessages((prev) => [...prev, { role: "user", text: q }]);
+    setQuestion("");
+    setIsLoading(true);
+    try {
+      const { answer } = await askRag(q);
+      setMessages((prev) => [...prev, { role: "assistant", text: answer || "Пустой ответ" }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: "assistant", text: err?.message || "Не удалось получить ответ" }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -164,35 +196,91 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
             </Collapsible>
           );
         })}
-        <div className="px-3 py-4 mt-auto border-t border-gray-100">
+        <div className="px-3 py-4 mt-auto border-t border-gray-100 flex flex-col gap-3">
+          {isOpen && (
+            <div className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden h-[420px] max-h-[60vh]">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-primary/5">
+                <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  ИИ-ассистент
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                  aria-label="Закрыть"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+                {messages.length === 0 && !isLoading && (
+                  <p className="text-xs text-gray-500 text-center py-6 leading-relaxed">
+                    Задайте вопрос по документам АТС
+                  </p>
+                )}
+                {messages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-lg px-3 py-2 text-xs whitespace-pre-wrap break-words ${
+                        m.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-gray-100 text-foreground"
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 text-gray-600 rounded-lg px-3 py-2 text-xs flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Думаю...
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="border-t border-gray-100 p-2 flex gap-2 items-end">
+                <textarea
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ваш вопрос..."
+                  rows={2}
+                  className="flex-1 resize-none rounded-md border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={isLoading || !question.trim()}
+                  className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Отправить"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400 text-center pb-1.5">Ctrl+Enter — отправить</p>
+            </div>
+          )}
+
           <button
-            onClick={() => setAiOpen(true)}
+            type="button"
+            onClick={() => setIsOpen((v) => !v)}
             className="w-full flex items-center gap-2 px-3 py-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-sm font-medium text-primary"
           >
             <Sparkles className="h-4 w-4" />
             Спросить ИИ
           </button>
         </div>
-        <Sheet open={aiOpen} onOpenChange={setAiOpen}>
-          <SheetContent side={isMobile ? "bottom" : "right"}>
-            <SheetHeader>
-              <Sparkles className="h-5 w-5 text-primary" />
-              <SheetTitle>ИИ-ассистент</SheetTitle>
-            </SheetHeader>
-            <div className="px-6 py-8 flex flex-col items-center text-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-primary" />
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Скоро здесь появится ИИ-ассистент
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed max-w-[260px]">
-                Он будет знать содержание каждого документа и отвечать на вопросы по охране труда, регламентам и требованиям — без поиска по папкам.
-              </p>
-            </div>
-          </SheetContent>
-        </Sheet>
       </SidebarContent>
     </Sidebar>
   );
 }
+
