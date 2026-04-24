@@ -212,7 +212,7 @@ const DocumentPage = () => {
       </div>
 
       {/* Right panel */}
-      <div className="w-full md:w-1/2 flex flex-col overflow-hidden min-h-[300px] md:min-h-0">
+      <div className="w-full md:w-1/2 flex flex-col overflow-hidden h-[70vh] md:h-auto md:min-h-0">
         {/* Tab bar */}
         <div className="flex border-b shrink-0">
           <button
