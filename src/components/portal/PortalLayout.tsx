@@ -16,32 +16,34 @@ import {
 function PortalHeader({ onLogout, displayName, roleName }: { onLogout: () => void; displayName?: string; roleName?: string }) {
   const { toggleSidebar } = useSidebar();
   return (
-    <header className="h-14 bg-primary flex items-center justify-between px-4 shrink-0">
-      <div className="flex items-center gap-2">
+    <header className="h-14 bg-primary flex items-center justify-between px-3 sm:px-4 shrink-0 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         <Button
           variant="ghost"
           size="sm"
-          className="text-white hover:bg-white/20 bg-white/15 rounded-lg gap-1.5 h-9 px-3"
+          className="text-white hover:bg-white/20 bg-white/15 rounded-lg h-9 w-9 sm:w-auto sm:px-3 sm:gap-1.5 p-0 shrink-0"
           onClick={toggleSidebar}
+          aria-label="Меню"
         >
           <Menu className="h-5 w-5" />
-          <span className="text-sm font-medium md:hidden">Меню</span>
+          <span className="text-sm font-medium hidden sm:inline">Меню</span>
         </Button>
-        <img src={atsLogo} alt="АТС" className="h-8 w-8 rounded" />
-        <span className="text-white font-semibold text-sm">АТС Портал</span>
+        <img src={atsLogo} alt="АТС" className="h-7 w-7 sm:h-8 sm:w-8 rounded shrink-0" />
+        <span className="text-white font-semibold text-sm truncate hidden min-[380px]:inline">АТС Портал</span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {displayName && (
-          <span className="text-white text-sm opacity-80 hidden md:inline">{displayName}</span>
+          <span className="text-white text-sm opacity-80 hidden md:inline truncate max-w-[200px]">{displayName}</span>
         )}
         {roleName && (
-          <span className="text-white/60 text-xs hidden lg:inline">{roleName}</span>
+          <span className="text-white/60 text-xs hidden lg:inline truncate max-w-[200px]">{roleName}</span>
         )}
         <Button
           variant="ghost"
           size="sm"
-          className="text-white hover:bg-white/20 gap-1"
+          className="text-white hover:bg-white/20 gap-1 h-9 px-2 sm:px-3"
           onClick={onLogout}
+          aria-label="Выйти"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Выйти</span>
@@ -85,9 +87,9 @@ export default function PortalLayout() {
           <SidebarInset>
             <PortalHeader onLogout={handleLogout} displayName={displayName} roleName={userRoles.length > 0 ? userRoles.join(", ") : undefined} />
             {showWelcome && (
-              <div className="mx-6 mt-4 mb-2 p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-foreground">
+              <div className="mx-4 sm:mx-6 mt-3 sm:mt-4 mb-2 p-3 sm:p-4 bg-blue-50 border-l-4 border-primary rounded-r-lg flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground text-sm sm:text-base truncate">
                     {displayName ? `Добрый день, ${(() => {
                       const parts = displayName.trim().split(/\s+/);
                       if (parts.length >= 3) return `${parts[1]} ${parts[2]}`;
@@ -95,7 +97,7 @@ export default function PortalLayout() {
                       return parts[0];
                     })()}!` : "Добрый день!"}
                   </p>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
                     {new Date().toLocaleDateString("ru-RU", {
                       weekday: "long",
                       day: "numeric",
@@ -106,14 +108,15 @@ export default function PortalLayout() {
                 </div>
                 <button
                   onClick={() => setShowWelcome(false)}
-                  className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+                  className="text-gray-400 hover:text-gray-600 text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
+                  aria-label="Закрыть"
                 >
                   ✕
                 </button>
               </div>
             )}
             <PortalBreadcrumb />
-            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0">
               <Outlet />
             </div>
           </SidebarInset>

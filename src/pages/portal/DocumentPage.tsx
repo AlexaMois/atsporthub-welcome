@@ -116,12 +116,12 @@ const DocumentPage = () => {
   return (
     <div
       key={docId}
-      className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden"
+      className="flex flex-col md:flex-row flex-1 min-h-0 md:overflow-hidden"
     >
       {/* Left column */}
-      <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink">
-        {/* Scrollable metadata area */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 pb-2 space-y-4">
+      <div className="w-full md:w-1/2 flex flex-col md:border-r shrink-0 md:shrink md:min-h-0">
+        {/* Metadata area — обычный поток на мобильном, скролл только на десктопе */}
+        <div className="md:flex-1 md:min-h-0 md:overflow-y-auto p-4 sm:p-6 pb-2 space-y-4">
           <h1 className="text-xl font-bold text-foreground leading-tight">{doc.title}</h1>
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ const DocumentPage = () => {
         </div>
 
         {/* Sticky bottom actions — always visible */}
-        <div className="p-6 pt-3 border-t space-y-3 shrink-0">
+        <div className="p-4 sm:p-6 pt-3 border-t space-y-3 shrink-0 sticky bottom-0 bg-background md:static z-10">
           {fileUrl && (
             <div className="flex flex-col gap-2">
               <Button
@@ -212,7 +212,7 @@ const DocumentPage = () => {
       </div>
 
       {/* Right panel */}
-      <div className="w-full md:w-1/2 flex flex-col overflow-hidden min-h-[300px] md:min-h-0">
+      <div className="w-full md:w-1/2 flex flex-col overflow-hidden h-[70vh] md:h-auto md:min-h-0">
         {/* Tab bar */}
         <div className="flex border-b shrink-0">
           <button

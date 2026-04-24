@@ -43,7 +43,7 @@ const DocumentListPage = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Stats */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -62,7 +62,7 @@ const DocumentListPage = () => {
         </div>
       ) : (
         <>
-          <h1 className="text-3xl font-bold text-foreground mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">
             {isEmployeePortal ? (isAllEmployeesMode ? "Все документы" : "Документы для вас") : "Все документы"}
           </h1>
           {(isDirector || isAllEmployeesMode) && (
@@ -138,7 +138,8 @@ const DocumentListPage = () => {
                       <Link
               to={`${basePath}/doc/${doc.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center"
+              aria-label="Открыть документ"
             >
               <Eye className="w-4 h-4" />
             </Link>

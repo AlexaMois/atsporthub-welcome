@@ -21,7 +21,7 @@ export function PortalBreadcrumb() {
     : null;
 
   return (
-    <div className="px-6 pt-4 pb-0">
+    <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-0">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

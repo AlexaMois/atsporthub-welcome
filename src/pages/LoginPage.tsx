@@ -62,20 +62,22 @@ const LoginPage = () => {
           <div>
             <Input
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               placeholder="+7 900 000 00 00"
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
                 setError(null);
               }}
-              className={error ? "border-destructive" : ""}
+              className={`text-base h-12 ${error ? "border-destructive" : ""}`}
               autoFocus
             />
             {error && (
               <p className="text-sm text-destructive mt-2">{error}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={loading || !phone.trim()}>
+          <Button type="submit" className="w-full h-12 text-base" disabled={loading || !phone.trim()}>
             {loading ? "Проверяем..." : "Войти"}
           </Button>
         </form>
