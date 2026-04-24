@@ -196,9 +196,9 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
             </Collapsible>
           );
         })}
-        <div className="px-3 py-4 mt-auto border-t border-gray-100 flex flex-col gap-3">
+        <div className="px-3 py-4 mt-auto border-t border-gray-100 flex flex-col gap-3 shrink-0">
           {isOpen && (
-            <div className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden h-[420px] max-h-[60vh]">
+            <div className={`flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden ${isMobile ? "h-[320px] max-h-[40vh]" : "h-[420px] max-h-[60vh]"}`}>
               <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-primary/5">
                 <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
                   <Sparkles className="h-4 w-4" />
