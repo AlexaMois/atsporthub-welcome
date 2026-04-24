@@ -65,3 +65,12 @@ export function safeJsonParse<T>(value: string | null, fallback: T): T {
     return fallback;
   }
 }
+
+export async function askRag(question: string): Promise<{ answer: string }> {
+  const token = localStorage.getItem("user_token");
+  const result = await apiCall<{ answer: string }>("ask-rag", { question }, "POST", token ?? undefined);
+  if (!result.ok || !result.data) {
+    throw new Error(result.error ?? (result.data as any)?.error ?? "RAG service unavailable");
+  }
+  return { answer: result.data.answer };
+}
