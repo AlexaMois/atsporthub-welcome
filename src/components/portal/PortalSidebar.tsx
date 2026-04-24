@@ -273,7 +273,7 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
           <button
             type="button"
             onClick={() => setIsOpen((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-sm font-medium text-primary"
+            className="w-full flex items-center gap-2 px-3 py-3 min-h-[44px] rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-sm font-medium text-primary"
           >
             <Sparkles className="h-4 w-4" />
             Спросить ИИ
