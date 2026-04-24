@@ -279,3 +279,8 @@ export function PortalSidebar({ roleName }: { roleName?: string }) {
             Спросить ИИ
           </button>
         </div>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
+
