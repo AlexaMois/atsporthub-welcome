@@ -156,7 +156,7 @@ const DocumentPage = () => {
         </div>
 
         {/* Sticky bottom actions — always visible */}
-        <div className="p-6 pt-3 border-t space-y-3 shrink-0">
+        <div className="p-4 sm:p-6 pt-3 border-t space-y-3 shrink-0 sticky bottom-0 bg-background md:static z-10">
           {fileUrl && (
             <div className="flex flex-col gap-2">
               <Button
